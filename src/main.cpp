@@ -1,5 +1,15 @@
 #include <Arduino.h>
 
+#define DEBUG true
+
+#if DEBUG
+    #define PRINT(...) Serial.print(__VA_ARGS__)
+    #define PRINTLN(...) Serial.println(__VA_ARGS__)
+#else
+    #define PRINT(...)
+    #define PRINTLN(...)
+#endif
+
 TaskHandle_t controlerTaskHandle;
 TaskHandle_t executorTaskHandle;
 void controlerTask(void *pvParameters);
@@ -7,7 +17,10 @@ void executorTask(void *pvParameters);
 
 void setup() {
     delayMicroseconds(500);
-    Serial.begin(115200);
+
+    #if DEBUG
+        Serial.begin(115200);
+    #endif
 
     xTaskCreatePinnedToCore(controlerTask, "controlerTask", 8192, NULL, tskIDLE_PRIORITY, &controlerTaskHandle, 0);
     xTaskCreatePinnedToCore(executorTask, "executorTask", 8192, NULL, tskIDLE_PRIORITY, &executorTaskHandle, 1);
@@ -58,8 +71,9 @@ void controlerTask(void *pvParameters) {
 
                 if (buttonA.buttonState == HIGH) {
                     if (xSemaphoreTake(xMutexCounterA, 200 / portTICK_PERIOD_MS) == pdTRUE) {
-                        Serial.print("counterA = ");
-                        Serial.println(++counterA);
+                        ++counterA;
+                        PRINT("counterA = ");
+                        PRINTLN(counterA);
                         xSemaphoreGive(xMutexCounterA);
                     }
                 }
@@ -75,8 +89,9 @@ void controlerTask(void *pvParameters) {
 
                 if (buttonB.buttonState == HIGH) {
                     if (xSemaphoreTake(xMutexCounterB, 200 / portTICK_PERIOD_MS) == pdTRUE) {
-                        Serial.print("counterB = ");
-                        Serial.println(++counterB);
+                        ++counterB;
+                        PRINT("counterB = ");
+                        PRINTLN(counterB);
                         xSemaphoreGive(xMutexCounterB);
                     }
                 }
@@ -92,8 +107,9 @@ void controlerTask(void *pvParameters) {
 
                 if (buttonC.buttonState == HIGH) {
                     if (xSemaphoreTake(xMutexCounterC, 200 / portTICK_PERIOD_MS) == pdTRUE) {
-                        Serial.print("counterC = ");
-                        Serial.println(++counterC);
+                        ++counterC;
+                        PRINT("counterC = ");
+                        PRINTLN(counterC);
                         xSemaphoreGive(xMutexCounterC);
                     }
                 }
