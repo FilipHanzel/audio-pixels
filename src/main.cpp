@@ -30,9 +30,9 @@ void setup() {
     xMutexCounterB = xSemaphoreCreateMutex();
     xMutexCounterC = xSemaphoreCreateMutex();
 
-    #if DEBUG
-        Serial.begin(115200);
-    #endif
+#if DEBUG
+    Serial.begin(115200);
+#endif
 
     xTaskCreatePinnedToCore(controlerTask, "controlerTask", 8192, NULL, tskIDLE_PRIORITY, &controlerTaskHandle, 0);
     xTaskCreatePinnedToCore(executorTask, "executorTask", 8192, NULL, tskIDLE_PRIORITY, &executorTaskHandle, 1);
@@ -99,28 +99,28 @@ void controlerTask(void *pvParameters) {
 
     while (true) {
         if (debouncedRelease(&buttonDebounceStateA, digitalRead(BUTTON_A_PIN))) {
-                    if (xSemaphoreTake(xMutexCounterA, 200 / portTICK_PERIOD_MS) == pdTRUE) {
-                        ++counterA;
-                PRINTF("counterA = %d\n", counterA);
-                        xSemaphoreGive(xMutexCounterA);
-                    }
-                }
+            if (xSemaphoreTake(xMutexCounterA, 200 / portTICK_PERIOD_MS) == pdTRUE) {
+                ++counterA;
+                PRINTF("counterA = %d\n", counterA); 
+                xSemaphoreGive(xMutexCounterA);
+            }
+        }
 
         if (debouncedRelease(&buttonDebounceStateB, digitalRead(BUTTON_B_PIN))) {
-                    if (xSemaphoreTake(xMutexCounterB, 200 / portTICK_PERIOD_MS) == pdTRUE) {
-                        ++counterB;
+            if (xSemaphoreTake(xMutexCounterB, 200 / portTICK_PERIOD_MS) == pdTRUE) {
+                ++counterB;
                 PRINTF("counterB = %d\n", counterB);
-                        xSemaphoreGive(xMutexCounterB);
-                    }
-                }
+                xSemaphoreGive(xMutexCounterB);
+            }
+        }
 
         if (debouncedRelease(&buttonDebounceStateC, digitalRead(BUTTON_C_PIN))) {
-                    if (xSemaphoreTake(xMutexCounterC, 200 / portTICK_PERIOD_MS) == pdTRUE) {
-                        ++counterC;
+            if (xSemaphoreTake(xMutexCounterC, 200 / portTICK_PERIOD_MS) == pdTRUE) {
+                ++counterC;
                 PRINTF("counterC = %d\n", counterC);
-                        xSemaphoreGive(xMutexCounterC);
-                    }
-                }
+                xSemaphoreGive(xMutexCounterC);
+            }
+        }
     }
 }
 
