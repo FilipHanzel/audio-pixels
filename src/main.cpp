@@ -8,13 +8,27 @@
 #define PRINTF(...)
 #endif
 
+// Setup tasks and shared resources
+
 TaskHandle_t controlerTaskHandle;
 TaskHandle_t executorTaskHandle;
 void controlerTask(void *pvParameters);
 void executorTask(void *pvParameters);
 
+int counterA = 0;
+int counterB = 0;
+int counterC = 0;
+
+SemaphoreHandle_t xMutexCounterA = NULL;
+SemaphoreHandle_t xMutexCounterB = NULL;
+SemaphoreHandle_t xMutexCounterC = NULL;
+
 void setup() {
     delayMicroseconds(500);
+
+    xMutexCounterA = xSemaphoreCreateMutex();
+    xMutexCounterB = xSemaphoreCreateMutex();
+    xMutexCounterC = xSemaphoreCreateMutex();
 
     #if DEBUG
         Serial.begin(115200);
@@ -28,14 +42,6 @@ void setup() {
 void loop() { vTaskDelete(NULL); }
 
 // Control
-
-int counterA = 0;
-int counterB = 0;
-int counterC = 0;
-
-SemaphoreHandle_t xMutexCounterA = NULL;
-SemaphoreHandle_t xMutexCounterB = NULL;
-SemaphoreHandle_t xMutexCounterC = NULL;
 
 /**
  * @brief Button state struct used in debouncing routine.
@@ -90,10 +96,6 @@ void controlerTask(void *pvParameters) {
     pinMode(BUTTON_A_PIN, INPUT_PULLUP);
     pinMode(BUTTON_B_PIN, INPUT_PULLUP);
     pinMode(BUTTON_C_PIN, INPUT_PULLUP);
-
-    xMutexCounterA = xSemaphoreCreateMutex();
-    xMutexCounterB = xSemaphoreCreateMutex();
-    xMutexCounterC = xSemaphoreCreateMutex();
 
     while (true) {
         if (debouncedRelease(&buttonDebounceStateA, digitalRead(BUTTON_A_PIN))) {
