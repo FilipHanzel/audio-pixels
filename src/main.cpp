@@ -39,83 +39,88 @@ SemaphoreHandle_t xMutexCounterA = NULL;
 SemaphoreHandle_t xMutexCounterB = NULL;
 SemaphoreHandle_t xMutexCounterC = NULL;
 
+/**
+ * @brief Button state struct used in debouncing routine.
+ */
+typedef struct {
+    byte stableState = HIGH;
+    byte lastState = HIGH;
+    unsigned long lastDebounceTime = 0;
+} ButtonDebounceState;
+
 #define BUTTON_DEBOUNCE_DELAY 20
 #define TIME_PASSED_SINCE(T) (millis() - T)
 
+/**
+ * @brief Button debouncing routine.
+ *
+ * @param bds Pointer to the `ButtonDebounceState` struct for the button.
+ * @param reading Unprocessed reading of the button state.
+ *
+ * @return `true` if button was released, `false` otherwise.
+ */
+bool debouncedRelease(ButtonDebounceState *bds, int reading) {
+    bool is_release = false;
+
+    if (reading != bds->lastState) {
+        bds->lastDebounceTime = millis();
+    }
+
+    if (TIME_PASSED_SINCE(bds->lastDebounceTime) > BUTTON_DEBOUNCE_DELAY) {
+        if (reading != bds->stableState) {
+            bds->stableState = reading;
+
+            if (bds->stableState == HIGH) {
+                is_release = true;
+            }
+        }
+    }
+    bds->lastState = reading;
+
+    return is_release;
+}
+
+#define BUTTON_A_PIN 25
+#define BUTTON_B_PIN 26
+#define BUTTON_C_PIN 27
+
 void controlerTask(void *pvParameters) {
-    struct Button {
-        byte pin;
-        byte buttonState = HIGH;
-        byte lastButtonState = HIGH;
-        unsigned long lastDebounceTime = 0;
-    } buttonA, buttonB, buttonC;
+    ButtonDebounceState buttonDebounceStateA;
+    ButtonDebounceState buttonDebounceStateB;
+    ButtonDebounceState buttonDebounceStateC;
 
-    buttonA.pin = 25;
-    buttonB.pin = 26;
-    buttonC.pin = 27;
-
-    pinMode(buttonA.pin, INPUT_PULLUP);
-    pinMode(buttonB.pin, INPUT_PULLUP);
-    pinMode(buttonC.pin, INPUT_PULLUP);
+    pinMode(BUTTON_A_PIN, INPUT_PULLUP);
+    pinMode(BUTTON_B_PIN, INPUT_PULLUP);
+    pinMode(BUTTON_C_PIN, INPUT_PULLUP);
 
     xMutexCounterA = xSemaphoreCreateMutex();
     xMutexCounterB = xSemaphoreCreateMutex();
     xMutexCounterC = xSemaphoreCreateMutex();
 
     while (true) {
-        int readingA = digitalRead(buttonA.pin);
-        if (readingA != buttonA.lastButtonState) buttonA.lastDebounceTime = millis();
-        if (TIME_PASSED_SINCE(buttonA.lastDebounceTime) > BUTTON_DEBOUNCE_DELAY) {
-            if (readingA != buttonA.buttonState) {
-                buttonA.buttonState = readingA;
-
-                if (buttonA.buttonState == HIGH) {
+        if (debouncedRelease(&buttonDebounceStateA, digitalRead(BUTTON_A_PIN))) {
                     if (xSemaphoreTake(xMutexCounterA, 200 / portTICK_PERIOD_MS) == pdTRUE) {
                         ++counterA;
-                        PRINT("counterA = ");
-                        PRINTLN(counterA);
+                PRINTF("counterA = %d\n", counterA);
                         xSemaphoreGive(xMutexCounterA);
                     }
                 }
-            }
-        }
-        buttonA.lastButtonState = readingA;
 
-        int readingB = digitalRead(buttonB.pin);
-        if (readingB != buttonB.lastButtonState) buttonB.lastDebounceTime = millis();
-        if (TIME_PASSED_SINCE(buttonB.lastDebounceTime) > BUTTON_DEBOUNCE_DELAY) {
-            if (readingB != buttonB.buttonState) {
-                buttonB.buttonState = readingB;
-
-                if (buttonB.buttonState == HIGH) {
+        if (debouncedRelease(&buttonDebounceStateB, digitalRead(BUTTON_B_PIN))) {
                     if (xSemaphoreTake(xMutexCounterB, 200 / portTICK_PERIOD_MS) == pdTRUE) {
                         ++counterB;
-                        PRINT("counterB = ");
-                        PRINTLN(counterB);
+                PRINTF("counterB = %d\n", counterB);
                         xSemaphoreGive(xMutexCounterB);
                     }
                 }
-            }
-        }
-        buttonB.lastButtonState = readingB;
 
-        int readingC = digitalRead(buttonC.pin);
-        if (readingC != buttonC.lastButtonState) buttonC.lastDebounceTime = millis();
-        if (TIME_PASSED_SINCE(buttonC.lastDebounceTime) > BUTTON_DEBOUNCE_DELAY) {
-            if (readingC != buttonC.buttonState) {
-                buttonC.buttonState = readingC;
-
-                if (buttonC.buttonState == HIGH) {
+        if (debouncedRelease(&buttonDebounceStateC, digitalRead(BUTTON_C_PIN))) {
                     if (xSemaphoreTake(xMutexCounterC, 200 / portTICK_PERIOD_MS) == pdTRUE) {
                         ++counterC;
-                        PRINT("counterC = ");
-                        PRINTLN(counterC);
+                PRINTF("counterC = %d\n", counterC);
                         xSemaphoreGive(xMutexCounterC);
                     }
                 }
-            }
-        }
-        buttonC.lastButtonState = readingC;
     }
 }
 
