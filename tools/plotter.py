@@ -124,7 +124,7 @@ if __name__ == "__main__":
                 reading = ser.readline()
                 reading = reading.decode().strip().split()
             except UnicodeDecodeError:
-                print(f"Invalid reading: {reading}")
+                print(" ".join(reading))
                 return lines
 
             segments = []
@@ -132,7 +132,7 @@ if __name__ == "__main__":
                 for segment in reading:
                     segments.append(float(segment))
             except ValueError:
-                print(f"Invalid reading: {reading}")
+                print(" ".join(reading))
                 return lines
 
             for l, x, y, s in zip_longest(lines, x_data, y_data, segments):
