@@ -1,48 +1,90 @@
 #include <Arduino.h>
 #include <driver/i2s.h>
 
-#define DEBUG true
+#define DEBUG
 
-#if DEBUG
+#ifdef DEBUG
 #define PRINTF(...) Serial.printf(__VA_ARGS__)
 #else
 #define PRINTF(...)
 #endif
 
-// Setup tasks and shared resources
+/**
+ * Tasks setup.
+ */
 
 TaskHandle_t controlerTaskHandle;
 TaskHandle_t executorTaskHandle;
 void controlerTask(void *pvParameters);
 void executorTask(void *pvParameters);
 
-int counterA = 0;
-int counterB = 0;
-int counterC = 0;
+void setupTasks() {
+    xTaskCreatePinnedToCore(controlerTask, "controlerTask", 8192, NULL, tskIDLE_PRIORITY, &controlerTaskHandle, 0);
+    xTaskCreatePinnedToCore(executorTask, "executorTask", 8192, NULL, tskIDLE_PRIORITY, &executorTaskHandle, 1);
+}
 
-SemaphoreHandle_t xMutexCounterA = NULL;
-SemaphoreHandle_t xMutexCounterB = NULL;
-SemaphoreHandle_t xMutexCounterC = NULL;
+/**
+ * Setup communication between tasks.
+ *
+ * Controller talks to executor with Command structs through commandQueue.
+ * Executor does not talk to controller. There is no shared state.
+ */
 
+/**
+ * @brief Types of commands sent from controller to executor.
+ */
+typedef enum {
+    set_audio_source,
+} CommandType;
+/**
+ * @brief Available audio sources.
+ */
+typedef enum {
+    audio_source_mic,
+    audio_source_line_in,
+} AudioSource;
+#define DEFAULT_AUDIO_SOURCE audio_source_mic
+/**
+ * @brief Commands sent from controller to executor.
+ */
+typedef struct {
+    CommandType type;
+    // Based on command type, appropriate union member(s) should be set
+    union {
+        AudioSource audioSource;
+    } data;
+} Command;
+
+QueueHandle_t commandQueue = NULL;
+
+void setupCommandQueue() {
+    commandQueue = xQueueCreate(32, sizeof(Command));
+    if (commandQueue == NULL) {
+        PRINTF("Error creating command queue. Likely due to memory. Halt!");
+        while (true);
+    }
+}
+
+/**
+ *
+ */
 void setup() {
-    delayMicroseconds(500);
-
-    xMutexCounterA = xSemaphoreCreateMutex();
-    xMutexCounterB = xSemaphoreCreateMutex();
-    xMutexCounterC = xSemaphoreCreateMutex();
-
-#if DEBUG
+#ifdef DEBUG
     Serial.begin(115200);
 #endif
 
-    xTaskCreatePinnedToCore(controlerTask, "controlerTask", 8192, NULL, tskIDLE_PRIORITY, &controlerTaskHandle, 0);
-    xTaskCreatePinnedToCore(executorTask, "executorTask", 8192, NULL, tskIDLE_PRIORITY, &executorTaskHandle, 1);
+    delayMicroseconds(500);
+
+    setupCommandQueue();
+    setupTasks();
 }
 
 // Get rid of the Arduino main loop
 void loop() { vTaskDelete(NULL); }
 
-// Control
+/**
+ * Controler.
+ */
 
 /**
  * @brief Button state struct used in debouncing routine.
@@ -85,57 +127,63 @@ bool debouncedRelease(ButtonDebounceState *bds, int reading) {
     return is_release;
 }
 
-#define BUTTON_A_PIN 25
+#define AUDIO_SOURCE_BUTTON_PIN 25
 #define BUTTON_B_PIN 26
 #define BUTTON_C_PIN 27
 
 void controlerTask(void *pvParameters) {
-    ButtonDebounceState buttonDebounceStateA;
+    ButtonDebounceState sourceButtonDebounceState;
     ButtonDebounceState buttonDebounceStateB;
     ButtonDebounceState buttonDebounceStateC;
 
-    pinMode(BUTTON_A_PIN, INPUT_PULLUP);
+    pinMode(AUDIO_SOURCE_BUTTON_PIN, INPUT_PULLUP);
     pinMode(BUTTON_B_PIN, INPUT_PULLUP);
     pinMode(BUTTON_C_PIN, INPUT_PULLUP);
 
+    AudioSource audioSource = DEFAULT_AUDIO_SOURCE;
+
+    Command commandToSend;
     while (true) {
-        if (debouncedRelease(&buttonDebounceStateA, digitalRead(BUTTON_A_PIN))) {
-            if (xSemaphoreTake(xMutexCounterA, 200 / portTICK_PERIOD_MS) == pdTRUE) {
-                ++counterA;
-                PRINTF("counterA = %d\n", counterA);
-                xSemaphoreGive(xMutexCounterA);
+        if (debouncedRelease(&sourceButtonDebounceState, digitalRead(AUDIO_SOURCE_BUTTON_PIN))) {
+            switch (audioSource) {
+                case audio_source_line_in:
+                    audioSource = audio_source_mic;
+                    break;
+                case audio_source_mic:
+                    audioSource = audio_source_line_in;
+                    break;
             }
+            commandToSend = {
+                .type = set_audio_source,
+                .data = {.audioSource = audioSource},
+            };
+            xQueueSendToBack(commandQueue, &commandToSend, pdMS_TO_TICKS(200));
         }
 
         if (debouncedRelease(&buttonDebounceStateB, digitalRead(BUTTON_B_PIN))) {
-            if (xSemaphoreTake(xMutexCounterB, 200 / portTICK_PERIOD_MS) == pdTRUE) {
-                ++counterB;
-                PRINTF("counterB = %d\n", counterB);
-                xSemaphoreGive(xMutexCounterB);
-            }
+            PRINTF("Button B (pin %d) pressed.", BUTTON_B_PIN);
         }
 
         if (debouncedRelease(&buttonDebounceStateC, digitalRead(BUTTON_C_PIN))) {
-            if (xSemaphoreTake(xMutexCounterC, 200 / portTICK_PERIOD_MS) == pdTRUE) {
-                ++counterC;
-                PRINTF("counterC = %d\n", counterC);
-                xSemaphoreGive(xMutexCounterC);
-            }
+            PRINTF("Button C (pin %d) pressed.", BUTTON_C_PIN);
         }
     }
 }
 
-// Audio processing + LEDs controll
+/**
+ *
+ * Executor.
+ *
+ */
+
 // TODO: Use WM8960 instead of on-board ADC.
 
 #define N_SAMPLES 1024
 #define SAMPLING_RATE 44100
 
 #define INPUT_ATTENUATION ADC_ATTEN_DB_11
-#define INPUT_MIC ADC1_CHANNEL_4   // GPIO32
-#define INPUT_LINE ADC1_CHANNEL_5  // GPIO33
-
-#define DEFAULT_INPUT INPUT_LINE
+#define INPUT_MIC_PIN ADC1_CHANNEL_4      // GPIO32
+#define INPUT_LINE_IN_PIN ADC1_CHANNEL_5  // GPIO33
 
 #define I2S_PORT I2S_NUM_0
 
@@ -166,7 +214,13 @@ void setupAudioInput() {
         while (true);
     }
 
-    setAudioInputPin(DEFAULT_INPUT);
+#if DEFAULT_AUDIO_SOURCE == audio_source_mic
+    setAudioInputPin(INPUT_MIC_PIN);
+#elif DEFAULT_AUDIO_SOURCE == audio_source_line_in
+    setAudioInputPin(INPUT_LINE_IN_PIN);
+#else
+#error "Invalid DEFAULT_AUDIO_SOURCE."
+#endif
 }
 
 /**
@@ -201,27 +255,42 @@ void setAudioInputPin(adc1_channel_t channel) {
 }
 
 void executorTask(void *pvParameters) {
+    Command receivedCommand;
+
     setupAudioInput();
 
-    // TODO: Use buttonA to switch between mic and line-in
-    setAudioInputPin(INPUT_MIC);
-
-    int16_t audio_buffer[N_SAMPLES] = {0};
+    int16_t audioBuffer[N_SAMPLES] = {0};
 
     int16_t max = 0.0;
     int16_t min = 4096.0;
 
-#define ADC_MASK 0x0FFF
-
     while (true) {
-        size_t bytes_read = 0;
-        i2s_read(I2S_PORT, audio_buffer, N_SAMPLES, &bytes_read, portMAX_DELAY);
+        if (xQueueReceive(commandQueue, &receivedCommand, 0) == pdPASS) {
+            switch (receivedCommand.type) {
+                // TODO: Extract command handling to separate function.
+                case set_audio_source:
+                    switch (receivedCommand.data.audioSource) {
+                        case audio_source_mic:
+                            setAudioInputPin(INPUT_MIC_PIN);
+                            break;
+                        case audio_source_line_in:
+                            setAudioInputPin(INPUT_LINE_IN_PIN);
+                            break;
+                    }
+                    break;
+            }
+        }
+
+        size_t bytesRead = 0;
+        i2s_read(I2S_PORT, audioBuffer, N_SAMPLES, &bytesRead, portMAX_DELAY);
 
         for (int i = 0; i < N_SAMPLES; i++) {
-            audio_buffer[i] &= ADC_MASK;
-            if (max < audio_buffer[i]) max = audio_buffer[i];
-            if (audio_buffer[i] > 0.0) {
-                if (min > audio_buffer[i]) min = audio_buffer[i];
+            // Mask unused bits
+            audioBuffer[i] &= 0x0FFF;
+
+            if (max < audioBuffer[i]) max = audioBuffer[i];
+            if (audioBuffer[i] > 0.0) {
+                if (min > audioBuffer[i]) min = audioBuffer[i];
             }
         }
         PRINTF("%d %d\n", min, max);
