@@ -140,7 +140,9 @@ if __name__ == "__main__":
                     x, y = [], []
                     x_data.append(x)
                     y_data.append(y)
-                    (l,) = ax.plot(x, y, lw=1, label="test")
+                    (l,) = ax.plot(x, y, lw=1)
+                    l.set_label(f"variable {len(lines)}")
+                    ax.legend()
 
                     lines.append(l)
 
