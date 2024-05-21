@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <driver/i2s.h>
 
+#include "buttons.h"
+
 #define DEBUG
 
 #ifdef DEBUG
@@ -83,49 +85,10 @@ void setup() {
 void loop() { vTaskDelete(NULL); }
 
 /**
+ *
  * Controler.
- */
-
-/**
- * @brief Button state struct used in debouncing routine.
- */
-typedef struct {
-    byte stableState = HIGH;
-    byte lastState = HIGH;
-    unsigned long lastDebounceTime = 0;
-} ButtonDebounceState;
-
-#define BUTTON_DEBOUNCE_DELAY 20
-#define TIME_PASSED_SINCE(T) (millis() - T)
-
-/**
- * @brief Button debouncing routine.
  *
- * @param bds Pointer to the `ButtonDebounceState` struct for the button.
- * @param reading Unprocessed reading of the button state.
- *
- * @return `true` if button was released, `false` otherwise.
  */
-bool debouncedRelease(ButtonDebounceState *bds, int reading) {
-    bool is_release = false;
-
-    if (reading != bds->lastState) {
-        bds->lastDebounceTime = millis();
-    }
-
-    if (TIME_PASSED_SINCE(bds->lastDebounceTime) > BUTTON_DEBOUNCE_DELAY) {
-        if (reading != bds->stableState) {
-            bds->stableState = reading;
-
-            if (bds->stableState == HIGH) {
-                is_release = true;
-            }
-        }
-    }
-    bds->lastState = reading;
-
-    return is_release;
-}
 
 #define AUDIO_SOURCE_BUTTON_PIN 25
 #define BUTTON_B_PIN 26
