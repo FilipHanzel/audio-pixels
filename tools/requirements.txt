@@ -1,0 +1,5 @@
+pyserial==3.5
+matplotlib==3.9.0
+pygame==2.5.2
+sounddevice==0.4.6
+scipy==1.13.1
