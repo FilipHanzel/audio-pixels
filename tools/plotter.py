@@ -25,7 +25,12 @@ if __name__ == "__main__":
 
     plot_parser = subparsers.add_parser("plot", help="Plot serial input.")
     plot_parser.add_argument(
-        "-p", "--port", dest="port", type=str, required=True, help="Serial port."
+        "-p",
+        "--port",
+        dest="port",
+        type=str,
+        required=True,
+        help="Serial port.",
     )
     plot_parser.add_argument(
         "-r",
@@ -97,9 +102,8 @@ if __name__ == "__main__":
             response += f"description: {port.description}\n"
             response += f"hwid:        {port.hwid}\n"
         print(response)
-        exit()
 
-    if args.command == "plot":
+    elif args.command == "plot":
 
         fig, ax = plt.subplots(
             figsize=(args.width / args.dpi, args.height / args.dpi),
