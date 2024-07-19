@@ -4,6 +4,7 @@ import argparse
 import math
 import os
 import typing
+from argparse import RawTextHelpFormatter
 from textwrap import dedent
 from typing import Iterable
 
@@ -165,7 +166,7 @@ class Display:
                 self.pg_screen,
                 "#aaabac",
                 (x_offset, y_offset),
-                (x_offset, y_offset - reading * self.raw_band_scale),
+                (x_offset, y_offset - float(reading * self.raw_band_scale)),
                 width=self.raw_band_width_rounded,
             )
 
@@ -178,7 +179,7 @@ class Display:
                 self.pg_screen,
                 "#aaabac",
                 (x_offset, y_offset),
-                (x_offset, y_offset - amplitude * self.fft_band_scale),
+                (x_offset, y_offset - float(amplitude * self.fft_band_scale)),
                 width=self.fft_band_width_rounded,
             )
 
@@ -191,7 +192,7 @@ class Display:
                 self.pg_screen,
                 "#aaabac",
                 (x_offset, y_offset),
-                (x_offset, y_offset - band * self.bucket_band_scale),
+                (x_offset, y_offset - float(band * self.bucket_band_scale)),
                 width=self.bucket_band_width_rounded,
             )
 
@@ -243,7 +244,7 @@ def get_bark_thresholds(max_frequency: float, n_bins: int) -> float:
 
 
 def get_rfft_frequencies(n: int, sampling_rate: int) -> list[float]:
-    """Get a list of n // 2 - 1 frequency values matching rfft result."""
+    """Get a list of n // 2 frequency values matching rfft result."""
     return [i * sampling_rate / n for i in range(n // 2)]
 
 
@@ -259,7 +260,7 @@ if __name__ == "__main__":
         """
     )
 
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(description=description, formatter_class=RawTextHelpFormatter)
     subparsers = parser.add_subparsers(title="commands", required=True, dest="command")
 
     list_parser = subparsers.add_parser("list", help="List available input devices.")
