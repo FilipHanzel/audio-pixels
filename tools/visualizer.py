@@ -329,22 +329,27 @@ if __name__ == "__main__":
         frequencies = get_rfft_frequencies(args.block_size, args.sample_rate)
         band_cutoff_table = get_bark_thresholds(args.sample_rate // 2, args.n_bins)
 
+        band_scale = 0.05
+
         if args.calibration:
-            calibration_table = [1.0] * args.n_bins
-            calibration_bands = [0.0] * args.n_bins
-        # fmt: off
+            calibration_table = [0.0] * args.n_bins
+            calibration_max = 0.0
+            calibration_counter = 0
+
+        # This was calibrated with pink noise and should work nicely,
+        # but there is way too much noise for the signal to be usable.
+        # TODO: Fix the noise and recalibrate.
         elif args.n_bins == 16:
-            calibration_table = [73.637, 36.38, 32.924, 30.736, 29.887, 32.362, 34.04, 35.583, 37.915, 43.975, 46.279, 53.236, 66.515, 64.834, 82.786, 95.451]
+            calibration_table = [1.0, 1.579, 2.967, 3.934, 10.496, 4.529, 2.819, 2.025, 1.288, 1.192, 3.972, 5.725, 4.957, 2.465, 4.515, 14.452]
         elif args.n_bins == 24:
-            calibration_table = [69.305, 30.524, 26.926, 23.88, 23.146, 22.315, 20.204, 24.864, 21.131, 22.508, 26.321, 25.768, 24.164, 28.813, 31.874, 31.457, 31.532, 39.849, 45.721, 42.973, 44.885, 52.768, 64.966, 64.99]
+            calibration_table = [1.0, 1.656, 2.004, 3.445, 4.077, 5.207, 11.74, 8.4, 4.891, 3.901, 2.711, 2.33, 1.606, 1.379, 1.445, 3.941, 6.296, 7.645, 7.734, 3.885, 2.587, 4.106, 16.077, 19.769]
         elif args.n_bins == 32:
-            calibration_table = [34.108, 29.789, 25.454, 21.266, 21.764, 15.325, 18.832, 16.803, 17.262, 18.131, 17.015, 18.065, 18.347, 20.636, 20.308, 20.143, 19.847, 21.859, 23.471, 26.745, 24.463, 24.067, 25.957, 30.151, 34.825, 34.191, 31.721, 36.077, 41.139, 45.742, 50.584, 50.985]
+            calibration_table = [2.357, 1.0, 2.06, 2.637, 3.228, 6.028, 4.95, 6.828, 14.251, 16.951, 7.569, 5.106, 5.386, 3.108, 2.807, 2.837, 2.006, 1.685, 1.509, 1.919, 4.588, 8.741, 6.26, 9.923, 9.482, 5.441, 4.287, 3.038, 4.502, 12.644, 24.705, 25.828]
         elif args.n_bins == 64:
-            calibration_table = [41.08, 23.914, 19.405, 17.252, 18.686, 13.431, 14.971, 10.018, 9.437, 14.739, 8.713, 8.722, 13.088, 10.028, 9.261, 9.054, 9.705, 9.907, 14.005, 10.228, 11.11, 9.745, 10.184, 10.235, 10.644, 9.895, 12.009, 10.766, 10.458, 12.391, 11.262, 12.901, 12.207, 10.708, 10.418, 12.524, 13.266, 13.216, 14.934, 13.575, 14.367, 13.279, 13.008, 12.723, 13.251, 14.235, 16.326, 17.129, 20.103, 19.173, 17.684, 17.44, 15.978, 17.537, 18.818, 19.388, 19.886, 22.151, 22.786, 24.076, 26.023, 26.508, 26.393, 28.321]
+            calibration_table = [6.206, 2.061, 1.0, 2.257, 3.613, 2.237, 2.94, 3.938, 5.363, 3.881, 7.85, 8.147, 6.339, 7.596, 8.291, 9.72, 15.826, 26.609, 19.087, 26.361, 11.688, 11.138, 6.986, 6.954, 7.405, 7.0, 4.609, 4.375, 4.466, 3.699, 4.942, 3.227, 3.078, 2.692, 2.332, 2.231, 2.392, 1.977, 1.894, 3.657, 4.934, 5.77, 9.595, 11.726, 10.446, 10.29, 12.838, 17.665, 18.469, 11.347, 10.365, 5.917, 7.247, 3.903, 3.406, 6.314, 4.95, 6.87, 14.149, 24.256, 29.694, 33.454, 33.345, 32.136]
         else:
             raise NotImplementedError()
-        # fmt: on
-
+        
         with audio_stream:
             running = True
             while running:
@@ -366,14 +371,28 @@ if __name__ == "__main__":
                         band_idx += 1
                     bands[band_idx] += fft[i]
 
+                for i in range(args.n_bins):
+                    bands[i] *= band_scale
+
                 if args.calibration:
+                    calibration_counter += 1
+
                     for i in range(args.n_bins):
-                        if bands[i] > calibration_bands[i]:
-                            calibration_bands[i] = round(bands[i], 3)
-                    print(calibration_bands)
+                        calibration_table[i] += float(bands[i])
+
+                    if calibration_counter >= 512:
+                        m = max(calibration_table)
+                        for i in range(args.n_bins):
+                            calibration_table[i] = m / calibration_table[i]
+                        
+                        print(f"Calibration table: {[round(v, 3) for v in calibration_table]}")
+                        
+                        calibration_counter = 0
+                        calibration_table = [0.0] * args.n_bins
+
                 else:
                     for i in range(args.n_bins):
-                        bands[i] /= calibration_table[i]
+                        bands[i] *= calibration_table[i]
 
                 display.draw(sample, fft, bands)
                 display.flip()
