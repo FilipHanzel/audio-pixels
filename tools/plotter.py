@@ -147,7 +147,10 @@ if __name__ == "__main__":
                 reading = ser.readline()
                 reading = reading.decode().strip().split()
             except UnicodeDecodeError:
-                print(" ".join(reading))
+                if isinstance(reading, list):
+                    print(" ".join(reading))
+                else:
+                    print(reading)
                 return lines
 
             segments = []
