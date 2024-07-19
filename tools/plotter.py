@@ -1,4 +1,5 @@
 import argparse
+from argparse import RawTextHelpFormatter
 from itertools import zip_longest
 from textwrap import dedent
 
@@ -6,6 +7,14 @@ import matplotlib.pyplot as plt
 import serial
 import serial.tools.list_ports
 from matplotlib.animation import FuncAnimation
+
+
+def numeric_or_string(value: str) -> float | str:
+    try:
+        return float(value)
+    except Exception:
+        return value
+
 
 if __name__ == "__main__":
     description = dedent(
@@ -18,7 +27,7 @@ if __name__ == "__main__":
         """
     )
 
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(description=description, formatter_class=RawTextHelpFormatter)
     subparsers = parser.add_subparsers(title="commands", required=True, dest="command")
 
     list_parser = subparsers.add_parser("list", help="List available serial ports.")
@@ -50,15 +59,15 @@ if __name__ == "__main__":
     plot_parser.add_argument(
         "--y-min",
         dest="y_min",
-        type=float,
-        default=0.0,
+        type=numeric_or_string,
+        default="auto",
         help="Lower y-axis limit.",
     )
     plot_parser.add_argument(
         "--y-max",
         dest="y_max",
-        type=float,
-        default=1.0,
+        type=numeric_or_string,
+        default="auto",
         help="Upper y-axis limit.",
     )
     plot_parser.add_argument(
@@ -87,7 +96,10 @@ if __name__ == "__main__":
         dest="drop_frames",
         type=int,
         default=1,
-        help="How many frames/lines to drop when reading from serial port.",
+        help=(
+            "How many frames/lines to drop when reading from serial port. "
+            "Helpful when data isn't read fast enough and decoding fails."
+        )
     )
 
     args = parser.parse_args()
@@ -104,17 +116,24 @@ if __name__ == "__main__":
         print(response)
 
     elif args.command == "plot":
+        if isinstance(args.y_min, str) and args.y_min != "auto":
+            raise ValueError("Unexpected --y-min value. Set numeric value or 'auto'.")
+        if isinstance(args.y_max, str) and args.y_max != "auto":
+            raise ValueError("Unexpected --y-max value. Set numeric value or 'auto'.")
 
         fig, ax = plt.subplots(
             figsize=(args.width / args.dpi, args.height / args.dpi),
             dpi=args.dpi,
         )
+        fig.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
         fig.canvas.manager.set_window_title("Plotter")
-        fig.tight_layout(pad=1)
         ser = serial.Serial(args.port, args.rate)
 
         ax.set_xlim(0, args.x_ticks)
-        ax.set_ylim(args.y_min, args.y_max)
+        if args.y_min != "auto":
+            ax.set_ylim(bottom=args.y_min)
+        if args.y_max != "auto":
+            ax.set_ylim(top=args.y_max)
         ax.grid()
 
         x_data = []
@@ -158,7 +177,12 @@ if __name__ == "__main__":
 
                 l.set_data(x, y)
 
+            if args.y_min == "auto":
+                ax.set_ylim(bottom=min(value for y in y_data for value in y if value is not None))
+            if args.y_max == "auto":
+                ax.set_ylim(top=max(value for y in y_data for value in y if value is not None))
+
             return lines
 
-        ani = FuncAnimation(fig, animate, frames=1, interval=20, blit=True)
+        ani = FuncAnimation(fig, animate, frames=1, interval=20, blit=False)
         plt.show()
