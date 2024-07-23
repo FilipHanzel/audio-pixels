@@ -138,46 +138,64 @@ if __name__ == "__main__":
 
         x_data = []
         y_data = []
-        lines = []
+        line_plots = []
+
+        buffer = b""
+        dropped_frames = 0
 
         def animate(_):
-            try:
-                for _ in range(args.drop_frames):
-                    ser.readline()
-                reading = ser.readline()
-                reading = reading.decode().strip().split()
-            except UnicodeDecodeError:
-                if isinstance(reading, list):
-                    print(" ".join(reading))
-                else:
-                    print(reading)
-                return lines
+            global buffer
+            global dropped_frames
 
-            segments = []
-            try:
-                for segment in reading:
-                    segments.append(float(segment))
-            except ValueError:
-                print(" ".join(reading))
-                return lines
+            buffer += ser.read_all()
 
-            for l, x, y, s in zip_longest(lines, x_data, y_data, segments):
-                if l is None:
-                    x, y = [], []
-                    x_data.append(x)
-                    y_data.append(y)
-                    (l,) = ax.plot(x, y, lw=1)
-                    l.set_label(f"variable {len(lines)}")
-                    ax.legend()
+            if b"\n" not in buffer:
+                return line_plots
+            *data, buffer = buffer.split(b"\n")
 
-                    lines.append(l)
+            for data_line in data:
+                try:
+                    data_line = data_line.decode()
+                except UnicodeDecodeError:
+                    print(f"[ERROR] UnicodeDecodeError: {data_line}")
+                    return line_plots
 
-                if len(x) < args.x_ticks:
-                    x.append(len(x))
-                else:
-                    y.pop(0)
-                y.append(s)
+                segments = []
+                try:
+                    for segment in data_line.strip().split():
+                        segments.append(float(segment))
+                except ValueError:
+                    print(data_line)
+                    return line_plots
+                
+                if not segments:
+                    return line_plots
+                
+                if dropped_frames < args.drop_frames:
+                    dropped_frames += 1
+                    continue
+                dropped_frames = 0
+            
 
+                for l, x, y, s in zip_longest(line_plots, x_data, y_data, segments):
+                    if l is None:
+                        x, y = [], []
+                        x_data.append(x)
+                        y_data.append(y)
+                        (l,) = ax.plot(x, y, lw=1)
+                        l.set_label(f"variable {len(line_plots)}")
+                        ax.legend()
+
+                        line_plots.append(l)
+
+                    if len(x) < args.x_ticks:
+                        x.append(len(x))
+                    else:
+                        y.pop(0)
+                    y.append(s)
+
+
+            for l, x, y in zip(line_plots, x_data, y_data):
                 l.set_data(x, y)
 
             if args.y_min == "auto":
