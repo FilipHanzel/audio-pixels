@@ -198,12 +198,19 @@ if __name__ == "__main__":
             for l, x, y in zip(line_plots, x_data, y_data):
                 l.set_data(x, y)
 
-            if args.y_min == "auto":
-                ax.set_ylim(bottom=min(value for y in y_data for value in y if value is not None))
-            if args.y_max == "auto":
-                ax.set_ylim(top=max(value for y in y_data for value in y if value is not None))
+            bot = min(value for y in y_data for value in y if value is not None)
+            top = max(value for y in y_data for value in y if value is not None)
 
-            return lines
+            if bot >= top:
+                bot = top - 1
+                top = top + 1
+
+            if args.y_min == "auto":
+                ax.set_ylim(bottom=bot)
+            if args.y_max == "auto":
+                ax.set_ylim(top=top)
+
+            return line_plots
 
         ani = FuncAnimation(fig, animate, frames=1, interval=20, blit=False)
         plt.show()
