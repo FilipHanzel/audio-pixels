@@ -179,13 +179,12 @@ void setupAudioInput() {
 
     switch (audioSource) {
         case audio_source_mic:
-            setAudioInputPin(INPUT_MIC_PIN);    
+            setAudioInputPin(INPUT_MIC_PIN);
             break;
         case audio_source_line_in:
             setAudioInputPin(INPUT_LINE_IN_PIN);
             break;
     }
-
 }
 
 void setAudioInputPin(adc1_channel_t channel) {
@@ -230,12 +229,12 @@ __attribute__((aligned(16))) int16_t audioBuffer[N_SAMPLES] = {0};
 // but it caused the bands to react differently for the same signal
 // played multiple times (can be easily tested with online metronome).
 // I commented out the window for now.
-// 
+//
 // TODO: Test different windows when FFT is done on two samples at once
 //       (previous sample and current one).
-// 
+//
 // TODO: Try flatter window.
-// 
+//
 // __attribute__((aligned(16))) float window[N_SAMPLES];
 __attribute__((aligned(16))) float fftBuffer[N_SAMPLES * 2];
 
@@ -247,21 +246,20 @@ __attribute__((aligned(16))) float ledBars[N_LED_BANDS] = {0};
 
 // Audio processing part has to be calibrated for noise and band values,
 // to make max band values roughly equal.
-// 
-// TODO: Calibrate for mic and line-in separately.
-// 
+//
 // TODO: Document calibration process.
-// 
+//
 // TODO: Try brown noise for band calibration.
-// 
+//
 // #define BAND_CALIBRATION_MODE
 // #define NOISE_THRESHOLD_CALIBRATION_MODE
 
 #ifdef BAND_CALIBRATION_MODE
 int loopCounter = 0;
-__attribute__((aligned(16))) float calibrationTable[N_LED_BANDS] = {0.0};
+__attribute__((aligned(16))) float calibrationTableLineIn[N_LED_BANDS] = {0.0};
+__attribute__((aligned(16))) float calibrationTableMic[N_LED_BANDS] = {0.0};
 #else
-__attribute__((aligned(16))) float calibrationTable[N_LED_BANDS] = {
+__attribute__((aligned(16))) float calibrationTableLineIn[N_LED_BANDS] = {
     2.249558,
     3.024515,
     3.306966,
@@ -279,14 +277,15 @@ __attribute__((aligned(16))) float calibrationTable[N_LED_BANDS] = {
     1.000000,
     1.168663,
 };
-float bandLimit = 144212.54;
+__attribute__((aligned(16))) float calibrationTableMic[N_LED_BANDS] = {1.0};
 #endif
 
 #ifdef NOISE_THRESHOLD_CALIBRATION_MODE
 int loopCounter = 0;
-__attribute__((aligned(16))) float thresholdsTable[N_LED_BANDS] = {0.0};
+__attribute__((aligned(16))) float thresholdsTableLineIn[N_LED_BANDS] = {0.0};
+__attribute__((aligned(16))) float thresholdsTableMic[N_LED_BANDS] = {0.0};
 #else
-__attribute__((aligned(16))) float thresholdsTable[N_LED_BANDS] = {
+__attribute__((aligned(16))) float thresholdsTableLineIn[N_LED_BANDS] = {
     17204.0890624,
     10834.8085936,
     9805.2609376,
@@ -302,8 +301,8 @@ __attribute__((aligned(16))) float thresholdsTable[N_LED_BANDS] = {
     66376.656249,
     104329.743750,
     107374.575000,
-    118156.787500
-};
+    118156.787500};
+__attribute__((aligned(16))) float thresholdsTableMic[N_LED_BANDS] = {0.0};
 #endif
 
 void executorTask(void *pvParameters) {
@@ -347,18 +346,36 @@ void executorTask(void *pvParameters) {
     // Dynamic band scaling
     float maxBandValue = 5000.0;
 
+    // TODO: Find a less terrible way of handling defaults
+    // (queue up a batch of commands before starting executor?)
+    float *thresholdsTable;
+    float *calibrationTable;
+    switch (audioSource) {
+        case audio_source_mic:
+            thresholdsTable = thresholdsTableMic;
+            calibrationTable = calibrationTableMic;
+            break;
+
+        case audio_source_line_in:
+            thresholdsTable = thresholdsTableLineIn;
+            calibrationTable = calibrationTableLineIn;
+            break;
+    }
 
     while (true) {
-        if (xQueueReceive(commandQueue, &receivedCommand, 0) == pdPASS) {
+        while (xQueueReceive(commandQueue, &receivedCommand, 0) == pdPASS) {
             switch (receivedCommand.type) {
-                // TODO: Extract command handling to separate function
                 case set_audio_source:
                     switch (receivedCommand.data.audioSource) {
                         case audio_source_mic:
                             setAudioInputPin(INPUT_MIC_PIN);
+                            thresholdsTable = thresholdsTableMic;
+                            calibrationTable = calibrationTableMic;
                             break;
                         case audio_source_line_in:
                             setAudioInputPin(INPUT_LINE_IN_PIN);
+                            thresholdsTable = thresholdsTableLineIn;
+                            calibrationTable = calibrationTableLineIn;
                             break;
                     }
                     break;
@@ -415,13 +432,12 @@ void executorTask(void *pvParameters) {
         }
 
         // Ouput for debugging with plotter
-        
+
         // for (int i = 0; i < N_LED_BANDS - 1; i++) {
         //     PRINTF("%f ", bands[i]);
         // }
         // PRINTF("%f\n", bands[N_LED_BANDS - 1]);
         // continue;
-
 
 #ifdef NOISE_THRESHOLD_CALIBRATION_MODE
 
@@ -494,9 +510,7 @@ void executorTask(void *pvParameters) {
             maxBandValue *= 0.999;
         }
 
-
         for (int i = 0; i < N_LED_BANDS; i++) {
-
             // Scaling
             bands[i] /= maxBandValue * 0.8;
             bands[i] = bands[i] > 1.0 ? 1.0 : bands[i];
@@ -546,6 +560,5 @@ void executorTask(void *pvParameters) {
 
 #endif  // NOISE_THRESHOLD_CALIBRATION_MODE
 #endif  // BAND_CALIBRATION_MODE
-
     }
 }
