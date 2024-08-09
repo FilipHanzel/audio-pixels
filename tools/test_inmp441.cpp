@@ -48,19 +48,6 @@ void setup() {
     delay(500);
 }
 
-void printBits(int32_t num) {
-    int buffer[32] = {0};
-
-    for (int bit = 0; bit < 32; bit++) {
-        buffer[bit] = num & 0x01;
-        num = num >> 1;
-    }
-    for (int bit = 31; bit > -1; bit--) {
-        Serial.printf("%i", buffer[bit]);
-        if (bit % 8 == 0) Serial.print(" ");
-    }
-}
-
 void loop() {
     const int num_samples = 128;
     int32_t samples[num_samples] = {0};
