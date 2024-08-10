@@ -61,7 +61,6 @@ void loop() {
 
     for (int i = 0; i < num_samples; i++) {
         int32_t data = samples[i] >> 8;
-        data = data >> 6;  // ignore lease significant bits (noise)
 
         mean += data;
 
