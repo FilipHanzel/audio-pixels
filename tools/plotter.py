@@ -210,6 +210,8 @@ if __name__ == "__main__":
             if args.y_max == "auto":
                 ax.set_ylim(top=top)
 
+            ax.legend(loc="upper right")
+
             return line_plots
 
         ani = FuncAnimation(fig, animate, frames=1, interval=20, blit=False)
