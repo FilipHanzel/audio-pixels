@@ -52,7 +52,7 @@ typedef enum {
     audio_source_mic,
     audio_source_line_in,
 } AudioSource;
-AudioSource audioSource = audio_source_line_in;
+AudioSource audioSource = audio_source_mic;
 
 /**
  * @brief Commands sent from controller to executor.
@@ -144,65 +144,46 @@ void controlerTask(void *pvParameters) {
  *
  */
 
-#define INPUT_ATTENUATION ADC_ATTEN_DB_11
-#define INPUT_MIC_PIN ADC1_CHANNEL_4      // GPIO32
-#define INPUT_LINE_IN_PIN ADC1_CHANNEL_5  // GPIO33
 
 #define I2S_PORT I2S_NUM_0
-
 #define N_SAMPLES 1024
 #define SAMPLING_RATE 44100
 
-void setupAudioInput();
-void setAudioInputPin(adc1_channel_t channel);
+#define LINE_IN_INPUT_PIN ADC1_CHANNEL_5
 
-void setupAudioInput() {
-    const i2s_driver_config_t i2s_config = {
+void setupAudioInputLineIn() {
+
+    const i2s_driver_config_t i2sConfig = {
         .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN),
         .sample_rate = SAMPLING_RATE,
-        .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+        .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
         .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-        .dma_buf_count = 8,
+        .dma_buf_count = 4,
         .dma_buf_len = N_SAMPLES,
         .use_apll = false,
         .tx_desc_auto_clear = false,
         .fixed_mclk = 0,
+        .mclk_multiple = I2S_MCLK_MULTIPLE_DEFAULT,
+        .bits_per_chan = I2S_BITS_PER_CHAN_DEFAULT,
     };
 
-    esp_err_t err = i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
-    if (err != ESP_OK) {
-        PRINTF("Error installing I2S: 0x(%x). Halt!\n", err);
-        while (true);
-    }
-
-    switch (audioSource) {
-        case audio_source_mic:
-            setAudioInputPin(INPUT_MIC_PIN);
-            break;
-        case audio_source_line_in:
-            setAudioInputPin(INPUT_LINE_IN_PIN);
-            break;
-    }
-}
-
-void setAudioInputPin(adc1_channel_t channel) {
     esp_err_t err;
 
-    err = i2s_adc_disable(I2S_PORT);
+    err = i2s_driver_install(I2S_PORT, &i2sConfig, 0, NULL);
     if (err != ESP_OK) {
-        PRINTF("Error disabling ADC: 0x(%x). Halt!\n", err);
+        PRINTF("Error installing I2S driver: 0x(%x). Halt!\n", err);
+        while (true);
+    }
+    
+    err = i2s_set_adc_mode(ADC_UNIT_1, LINE_IN_INPUT_PIN);
+    if (err != ESP_OK) {
+        PRINTF("Error setting up ADC mode: 0x(%x). Halt!\n", err);
         while (true);
     }
 
-    err = i2s_set_adc_mode(ADC_UNIT_1, channel);
-    if (err != ESP_OK) {
-        PRINTF("Error setting up ADC: 0x(%x). Halt!\n", err);
-        while (true);
-    }
-
-    err = adc1_config_channel_atten(channel, INPUT_ATTENUATION);
+    err = adc1_config_channel_atten(LINE_IN_INPUT_PIN, ADC_ATTEN_DB_12);
     if (err != ESP_OK) {
         PRINTF("Error setting up ADC attenuation: 0x(%x). Halt!\n", err);
         while (true);
@@ -213,7 +194,101 @@ void setAudioInputPin(adc1_channel_t channel) {
         PRINTF("Error enabling ADC: 0x(%x). Halt!\n", err);
         while (true);
     }
+
+
+    // i2s_zero_dma_buffer(I2S_PORT);
+    
 }
+
+void teardownAudioInputLineIn() {
+
+    esp_err_t err;
+
+    err = i2s_adc_disable(I2S_PORT);
+    if (err != ESP_OK) {
+        PRINTF("Error disabling ADC: 0x(%x). Halt!\n", err);
+        while (true);
+    }
+
+    err = i2s_driver_uninstall(I2S_PORT);
+    if (err != ESP_OK) {
+        PRINTF("Error uninstalling I2S driver: 0x(%x). Halt!\n", err);
+        while (true);
+    }
+
+    // Without this, switching from line-in to mic won't work.
+    // I found the function when I was looking for something
+    // to reset the ADC and/or I2S module. Couldn't find any
+    // explanation online (I guess I didn't look hard enough).
+    err = adc_set_i2s_data_source(ADC_I2S_DATA_SRC_IO_SIG);
+    if (err != ESP_OK) {
+        PRINTF("Error uninstalling I2S driver: 0x(%x). Halt!\n", err);
+        while (true);
+    }
+
+}
+
+#define MIC_INPUT_WS_PIN 21
+#define MIC_INPUT_SD_PIN 18
+#define MIC_INPUT_SCK_PIN 19
+
+void setupAudioInputMic() {
+
+    i2s_config_t i2sConfig = {
+        .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
+        .sample_rate = SAMPLING_RATE,
+        .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
+        .channel_format = I2S_CHANNEL_FMT_ONLY_RIGHT,
+        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+        .dma_buf_count = 4,
+        .dma_buf_len = N_SAMPLES,
+        .use_apll = false,
+        .tx_desc_auto_clear = false,
+        .fixed_mclk = 0,
+        .mclk_multiple = I2S_MCLK_MULTIPLE_DEFAULT,
+        .bits_per_chan = I2S_BITS_PER_CHAN_DEFAULT,
+    };
+
+    i2s_pin_config_t i2sPinConfig = {
+        .bck_io_num = MIC_INPUT_SCK_PIN,
+        .ws_io_num = MIC_INPUT_WS_PIN,
+        .data_out_num = I2S_PIN_NO_CHANGE,
+        .data_in_num = MIC_INPUT_SD_PIN,
+    };
+
+    
+    esp_err_t err;
+
+    err = i2s_driver_install(I2S_PORT, &i2sConfig, 0, NULL);
+    if (err != ESP_OK) {
+        PRINTF("Error installing I2S driver: 0x(%x). Halt!\n", err);
+        while (true);
+    }
+
+    err = i2s_set_pin(I2S_PORT, &i2sPinConfig);
+    if (err != ESP_OK) {
+        PRINTF("Error setting I2S pin: 0x(%x). Halt!\n", err);
+        while (true);
+    }
+
+    // i2s_zero_dma_buffer(I2S_PORT);
+
+}
+
+void teardownAudioInputMic() {
+
+    esp_err_t err;
+
+    err = i2s_driver_uninstall(I2S_PORT);
+    if (err != ESP_OK) {
+        PRINTF("Error uninstalling I2S driver: 0x(%x). Halt!\n", err);
+        while (true);
+    }
+
+
+}
+
 
 #define N_LED_BANDS 16
 #define N_LEDS_PER_BAND 23
@@ -224,7 +299,7 @@ void setAudioInputPin(adc1_channel_t channel) {
 #define N_LEDS (N_LED_BANDS * N_LEDS_PER_BAND - 4 + 1)
 #define LED_DATA_PIN 5
 
-__attribute__((aligned(16))) int16_t audioBuffer[N_SAMPLES] = {0};
+__attribute__((aligned(16))) int32_t audioBuffer[N_SAMPLES] = {0};
 // I tried applying different window functions to the audio signal,
 // but it caused the bands to react differently for the same signal
 // played multiple times (can be easily tested with online metronome).
@@ -277,7 +352,24 @@ __attribute__((aligned(16))) float calibrationTableLineIn[N_LED_BANDS] = {
     1.000000,
     1.168663,
 };
-__attribute__((aligned(16))) float calibrationTableMic[N_LED_BANDS] = {1.0};
+__attribute__((aligned(16))) float calibrationTableMic[N_LED_BANDS] = {
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+};
 #endif
 
 #ifdef NOISE_THRESHOLD_CALIBRATION_MODE
@@ -305,10 +397,10 @@ __attribute__((aligned(16))) float thresholdsTableLineIn[N_LED_BANDS] = {
 __attribute__((aligned(16))) float thresholdsTableMic[N_LED_BANDS] = {0.0};
 #endif
 
+
 void executorTask(void *pvParameters) {
     Command receivedCommand;
 
-    setupAudioInput();
     size_t bytesRead = 0;
 
     CRGB leds[N_LEDS] = {CRGB::Black};
@@ -348,19 +440,29 @@ void executorTask(void *pvParameters) {
 
     // TODO: Find a less terrible way of handling defaults
     // (queue up a batch of commands before starting executor?)
+    bool isMic;
+    float audioBufferScale;
     float *thresholdsTable;
     float *calibrationTable;
     switch (audioSource) {
         case audio_source_mic:
+            setupAudioInputMic();
             thresholdsTable = thresholdsTableMic;
             calibrationTable = calibrationTableMic;
+            isMic = true;
+            audioBufferScale = 100.0;
             break;
 
         case audio_source_line_in:
+            setupAudioInputLineIn();
             thresholdsTable = thresholdsTableLineIn;
             calibrationTable = calibrationTableLineIn;
+            isMic = false;
+            audioBufferScale = 1.0;
             break;
     }
+
+    
 
     while (true) {
         while (xQueueReceive(commandQueue, &receivedCommand, 0) == pdPASS) {
@@ -368,27 +470,70 @@ void executorTask(void *pvParameters) {
                 case set_audio_source:
                     switch (receivedCommand.data.audioSource) {
                         case audio_source_mic:
-                            setAudioInputPin(INPUT_MIC_PIN);
+                            teardownAudioInputLineIn();
+                            setupAudioInputMic();
                             thresholdsTable = thresholdsTableMic;
                             calibrationTable = calibrationTableMic;
+                            PRINTF("MIC SET\n");
+                            isMic = true;
+                            audioBufferScale = 100.0;
+                            // Reset state
+                            maxBandValue = 5000.0;
                             break;
                         case audio_source_line_in:
-                            setAudioInputPin(INPUT_LINE_IN_PIN);
+                            teardownAudioInputMic();
+                            setupAudioInputLineIn();
                             thresholdsTable = thresholdsTableLineIn;
                             calibrationTable = calibrationTableLineIn;
+                            PRINTF("LINE-IN SET\n");
+                            isMic = false;
+                            audioBufferScale = 1.0;
+                            // Reset state
+                            maxBandValue = 5000.0;
                             break;
                     }
                     break;
             }
         }
-        
+
         i2s_read(I2S_PORT, audioBuffer, sizeof(audioBuffer), &bytesRead, portMAX_DELAY);
+
+        // TODO: I promise I'll fix it
+        if (isMic) {
+            for(int i = 0; i < N_SAMPLES; i++) {
+                audioBuffer[i] >>= 8;
+            }
+        } else {
+            for(int i = 0; i < N_SAMPLES; i++) {
+                audioBuffer[i] >>= 16;
+                audioBuffer[i] &= 0x00000FFF;
+            }
+        }
+
+        // // 
+        // // min-max for testing
+        // // 
+        // float _mean = 0.0;
+        // float _max = 0.0;
+        // float _min = 8388607.0; // max for signed 24 bit
+        // for (int i = 0; i < N_SAMPLES; i++) {
+        //     float value = audioBuffer[i] / audioBufferScale;
+        //     _mean += value;
+        //     if (value > _max) _max = value;
+        //     if (value < _min) _min = value;
+        // }
+        // _mean /= N_SAMPLES;
+        // Serial.printf("%f %f %f\n", _min, _mean, _max);
+        // // Serial.printf("%f %f\n", _min - _mean, _max - _mean);
+        // continue;
+        // // 
+        // // 
+        // // 
 
         // Copy from buffer, shift by the average (and apply a window?)
         float avg = 0.0;
         for (int i = 0; i < N_SAMPLES; i++) {
-            // TODO: Test scaling down audioBuffer value to [0.0, 1.0] range.
-            fftBuffer[i * 2 + 0] = float(audioBuffer[i] & 0x0FFF);
+            fftBuffer[i * 2 + 0] = audioBuffer[i] / audioBufferScale;
             fftBuffer[i * 2 + 1] = 0;
 
             avg += fftBuffer[i * 2 + 0];
