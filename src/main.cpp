@@ -132,6 +132,7 @@ void executorTask(void *pvParameters) {
             max = max < audioBands[i] ? audioBands[i] : max;
         }
         bandScale = max > bandScale ? max : bandScale * 0.999;
+        bandScale = bandScale < 1.0 ? 1.0 : bandScale;
 
         for (int i = 0; i < AUDIO_N_BANDS; i++) {
             audioBands[i] /= bandScale * 0.8;
