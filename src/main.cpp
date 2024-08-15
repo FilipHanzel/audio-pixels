@@ -19,12 +19,20 @@ void executorTask(void *pvParameters);
 
 typedef enum {
     set_audio_source,
+    set_visualization,
 } CommandType;
+
+typedef int Visualization;
+#define VISUALIZATION_RED_BARS 0
+#define VISUALIZATION_GREEN_BARS 1
+
+#define DEFAULT_VISUALIZATION 0
 
 typedef struct {
     CommandType type;
     union {
         AudioSource audioSource;
+        Visualization visualization;
     } data;
 } Command;
 QueueHandle_t commandQueue = NULL;
@@ -48,12 +56,16 @@ void setup() {
 void loop() { vTaskDelete(NULL); }  // get rid of the Arduino main loop
 
 #define AUDIO_SOURCE_BUTTON_PIN 25
+#define VISUALIZATION_BUTTON_PIN 26
 
 void controlerTask(void *pvParameters) {
     ButtonDebounceState audioSourceBtnState;
+    ButtonDebounceState visualizationBtnState;
     AudioSource audioSource = DEFAULT_AUDIO_SOURCE;
+    Visualization visualization = DEFAULT_VISUALIZATION;
 
     pinMode(AUDIO_SOURCE_BUTTON_PIN, INPUT_PULLUP);
+    pinMode(VISUALIZATION_BUTTON_PIN, INPUT_PULLUP);
 
     while (true) {
         if (debouncedRelease(&audioSourceBtnState, digitalRead(AUDIO_SOURCE_BUTTON_PIN))) {
@@ -61,6 +73,15 @@ void controlerTask(void *pvParameters) {
             Command command = {
                 .type = set_audio_source,
                 .data = {.audioSource = audioSource},
+            };
+            xQueueSendToBack(commandQueue, &command, pdMS_TO_TICKS(200));
+        }
+
+        if (debouncedRelease(&visualizationBtnState, digitalRead(VISUALIZATION_BUTTON_PIN))) {
+            visualization = visualization == VISUALIZATION_RED_BARS ? VISUALIZATION_GREEN_BARS : VISUALIZATION_RED_BARS;
+            Command command = {
+                .type = set_visualization,
+                .data = {.visualization = visualization},
             };
             xQueueSendToBack(commandQueue, &command, pdMS_TO_TICKS(200));
         }
@@ -84,6 +105,7 @@ void executorTask(void *pvParameters) {
     setupAudioProcessing();
     float bandScale = 0.0;
 
+    Visualization visualization = DEFAULT_VISUALIZATION;
     CRGB leds[LED_MATRIX_N] = {CRGB::Black};
     FastLED.addLeds<WS2812B, LED_MATRIX_DATA_PIN, GRB>(leds, LED_MATRIX_N);
     FastLED.show();
@@ -100,6 +122,9 @@ void executorTask(void *pvParameters) {
                     setupAudioTables(audioSource);
 
                     bandScale = 0.0;
+                    break;
+                case set_visualization:
+                    visualization = command.data.visualization;
                     break;
             }
         }
@@ -130,7 +155,7 @@ void executorTask(void *pvParameters) {
         for (int i = 0; i < AUDIO_N_BANDS; i++) {
             max = max < audioBands[i] ? audioBands[i] : max;
         }
-        bandScale = max > bandScale ? max : bandScale * 0.999;
+        bandScale = max > bandScale ? max : bandScale * 0.99;
         bandScale = bandScale < 1.0 ? 1.0 : bandScale;
 
         for (int i = 0; i < AUDIO_N_BANDS; i++) {
@@ -144,6 +169,8 @@ void executorTask(void *pvParameters) {
         }
 
         // LEDs
+
+        CRGB color = visualization == VISUALIZATION_RED_BARS ? CRGB::Red : CRGB::Green;
 
         for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
             int offset = 0;
@@ -159,7 +186,7 @@ void executorTask(void *pvParameters) {
 
             if (i % 2 == 0) {
                 for (int j = 0; j < toLight; j++) {
-                    leds[offset + i * n + j] = CRGB::Red;
+                    leds[offset + i * n + j] = color;
                 }
                 for (int j = 0; j < toSkip; j++) {
                     leds[offset + i * n + j + toLight] = CRGB::Black;
@@ -169,7 +196,7 @@ void executorTask(void *pvParameters) {
                     leds[offset + i * LED_MATRIX_N_PER_BAND + j] = CRGB::Black;
                 }
                 for (int j = 0; j < toLight; j++) {
-                    leds[offset + i * LED_MATRIX_N_PER_BAND + j + toSkip] = CRGB::Red;
+                    leds[offset + i * LED_MATRIX_N_PER_BAND + j + toSkip] = color;
                 }
             }
         }
