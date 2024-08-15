@@ -24,6 +24,8 @@ void teardownAudioSource(AudioSource audioSource);
 void readAudioDataToBuffer();
 
 void setupAudioProcessing();
+void setupAudioNoiseTable(AudioSource audioSource);
+void setupAudioCalibrationTable(AudioSource audioSource);
 void setupAudioTables(AudioSource audioSource);
 
 void processAudioData(float* bands);

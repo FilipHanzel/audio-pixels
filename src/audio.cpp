@@ -10,79 +10,79 @@
 #include "macros.h"
 
 __attribute__((aligned(16))) static float noiseTableLineIn[AUDIO_N_BANDS] = {
-    17204.0890624,
-    10834.8085936,
-    9805.2609376,
-    7531.8695312,
-    7360.607032,
-    10222.981249,
-    14104.764062,
-    23676.917187,
-    20596.579688,
-    27020.318750,
-    31723.990625,
-    46055.378124,
-    66376.656249,
-    104329.743750,
-    107374.575000,
-    118156.787500,
+    1173.29,
+    1404.40,
+    1589.53,
+    2361.81,
+    1707.81,
+    3703.57,
+    6061.60,
+    5411.36,
+    14170.02,
+    7748.10,
+    11478.27,
+    15091.23,
+    22618.30,
+    31175.87,
+    31952.33,
+    53590.45,
 };
 
 __attribute__((aligned(16))) static float calibrationTableLineIn[AUDIO_N_BANDS] = {
-    2.249558,
-    3.024515,
-    3.306966,
-    3.521792,
-    4.001316,
-    3.380087,
-    3.409574,
-    3.200538,
-    2.980788,
-    2.646222,
-    2.704367,
-    2.598766,
-    2.216094,
-    1.761241,
-    1.000000,
-    1.168663,
+    1.84,
+    2.55,
+    2.80,
+    3.00,
+    3.34,
+    2.83,
+    2.81,
+    2.41,
+    2.41,
+    1.84,
+    1.77,
+    1.55,
+    1.26,
+    1.31,
+    1.00,
+    1.01,
 };
 
 __attribute__((aligned(16))) static float noiseTableMic[AUDIO_N_BANDS] = {
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
+    103514.21,
+    143685.81,
+    117731.21,
+    52289.12,
+    40885.44,
+    34046.66,
+    31747.25,
+    30486.73,
+    36641.52,
+    37333.33,
+    44708.25,
+    52569.50,
+    67231.85,
+    79593.04,
+    145475.98,
+    234601.82,
 };
 
 __attribute__((aligned(16))) static float calibrationTableMic[AUDIO_N_BANDS] = {
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0,
+    1.00,
+    1.43,
+    2.78,
+    4.96,
+    7.45,
+    7.52,
+    2.21,
+    2.68,
+    2.61,
+    2.05,
+    1.16,
+    3.28,
+    2.01,
+    1.57,
+    2.31,
+    3.23,
 };
 
 __attribute__((aligned(16))) static float noiseTableNone[AUDIO_N_BANDS] = {
@@ -298,14 +298,25 @@ void readAudioDataToBuffer() {
     }
 }
 
-void setupAudioTables(AudioSource audioSource) {
+void setupAudioNoiseTable(AudioSource audioSource) {
     if (audioSource == AUDIO_SOURCE_MIC) {
         currentNoiseTable = noiseTableMic;
-        currentCalibrationTable = calibrationTableMic;
     } else {
         currentNoiseTable = noiseTableLineIn;
+    }
+}
+
+void setupAudioCalibrationTable(AudioSource audioSource) {
+    if (audioSource == AUDIO_SOURCE_MIC) {
+        currentCalibrationTable = calibrationTableMic;
+    } else {
         currentCalibrationTable = calibrationTableLineIn;
     }
+}
+
+void setupAudioTables(AudioSource audioSource) {
+    setupAudioNoiseTable(audioSource);
+    setupAudioCalibrationTable(audioSource);
 }
 
 void processAudioData(float* bands) {
@@ -329,7 +340,7 @@ void processAudioData(float* bands) {
         fftBuffer[i] = sqrtf(fftBuffer[i * 2 + 0] * fftBuffer[i * 2 + 0] + fftBuffer[i * 2 + 1] * fftBuffer[i * 2 + 1]);
     }
 
-    memset(bands, 0.0, sizeof(float) * AUDIO_N_BANDS);
+    memset(bands, 0, sizeof(float) * AUDIO_N_BANDS);
     int bandIdx = 0;
     for (int i = 1; i < AUDIO_N_SAMPLES / 2; i++) {
         float frequency = i * AUDIO_SAMPLING_RATE / AUDIO_N_SAMPLES;

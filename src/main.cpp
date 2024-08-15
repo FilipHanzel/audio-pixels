@@ -1,7 +1,6 @@
 #include <Arduino.h>
 
 #define FASTLED_INTERNAL  // silence FastLED SPI warning
-
 #include <FastLED.h>
 
 #define DEBUG
