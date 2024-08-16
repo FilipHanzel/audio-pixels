@@ -1,8 +1,5 @@
 #include <Arduino.h>
 
-#define FASTLED_INTERNAL  // silence FastLED SPI warning
-#include <FastLED.h>
-
 #define DEBUG
 
 #include "audio.h"
@@ -88,12 +85,6 @@ void controlerTask(void *pvParameters) {
     }
 }
 
-#define LED_MATRIX_DATA_PIN 5
-#define LED_MATRIX_N_BANDS 16
-#define LED_MATRIX_N_PER_BAND 23
-// I soldered wrong way last 4 leds of first band and they died, hence the -4 
-#define LED_MATRIX_N (LED_MATRIX_N_BANDS * LED_MATRIX_N_PER_BAND - 4)
-
 void executorTask(void *pvParameters) {
     AudioSource audioSource = DEFAULT_AUDIO_SOURCE;
     __attribute__((aligned(16))) float audioBands[AUDIO_N_BANDS] = {0.0};
@@ -104,10 +95,9 @@ void executorTask(void *pvParameters) {
     float bandScale = 0.0;
 
     Visualization visualization = DEFAULT_VISUALIZATION;
-    CRGB leds[LED_MATRIX_N] = {CRGB::Black};
-    FastLED.addLeds<WS2812B, LED_MATRIX_DATA_PIN, GRB>(leds, LED_MATRIX_N);
-    FastLED.show();
     __attribute__((aligned(16))) float ledBars[LED_MATRIX_N_BANDS] = {0.0};
+    setupLedStrip();
+    setupVisualization(visualization);
 
     Command command;
     while (true) {
@@ -122,16 +112,18 @@ void executorTask(void *pvParameters) {
                     bandScale = 0.0;
                     break;
                 case set_visualization:
+                    teardownVisualization(visualization);
                     visualization = command.data.visualization;
+                    setupVisualization(visualization);
                     break;
             }
         }
 
         readAudioDataToBuffer();
 
-        // // 
+        // //
         // // min-max for testing
-        // // 
+        // //
         // float _mean = 0.0;
         // float _max = 0.0;
         // float _min = 8388607.0;  // max for signed 24 bit
@@ -146,6 +138,8 @@ void executorTask(void *pvParameters) {
         // _mean /= AUDIO_N_SAMPLES;
         // PRINTF("%f %f %f\n", _min, _mean, _max);
         // continue;
+        // //
+        // //
 
         processAudioData(audioBands);
 
@@ -166,46 +160,6 @@ void executorTask(void *pvParameters) {
             ledBars[i] = audioBands[i] > ledBars[i] ? audioBands[i] : ledBars[i] * 0.94;
         }
 
-        // LEDs
-
-        CRGB color;
-        switch(visualization) {
-            case VISUALIZATION_RED_BARS:
-                color = CRGB::Red;
-                break;
-            case VISUALIZATION_GREEN_BARS:
-                color = CRGB::Green;
-                break;
-            case VISUALIZATION_BLUE_BARS:
-                color = CRGB::Blue;
-                break;
-        }
-
-
-        for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
-            int offset = i > 0 ? -4 : 0;
-            int barLength = i > 0 ? LED_MATRIX_N_PER_BAND : LED_MATRIX_N_PER_BAND - 4;
-            int toLight = int(ledBars[i] * LED_MATRIX_N_PER_BAND);
-            if (toLight > barLength) toLight = barLength;
-            toLight = toLight > LED_MATRIX_N_PER_BAND ? LED_MATRIX_N_PER_BAND : toLight;
-            int toSkip = barLength - toLight;
-
-            if (i % 2 == 0) {
-                for (int j = 0; j < toLight; j++) {
-                    leds[offset + i * LED_MATRIX_N_PER_BAND + j] = color;
-                }
-                for (int j = 0; j < toSkip; j++) {
-                    leds[offset + i * LED_MATRIX_N_PER_BAND + j + toLight] = CRGB::Black;
-                }
-            } else {
-                for (int j = 0; j < toSkip; j++) {
-                    leds[offset + i * LED_MATRIX_N_PER_BAND + j] = CRGB::Black;
-                }
-                for (int j = 0; j < toLight; j++) {
-                    leds[offset + i * LED_MATRIX_N_PER_BAND + j + toSkip] = color;
-                }
-            }
-        }
-        FastLED.show();
+        updateVisualization(ledBars);
     }
 }
