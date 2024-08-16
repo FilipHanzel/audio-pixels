@@ -4,6 +4,7 @@
 #include <FastLED.h>
 
 #include "audio.h"
+#include "visualization.h"
 
 //
 // Calibration mode and iniput selection
@@ -25,13 +26,6 @@
 #if !defined BAND_CALIBRATION_MODE && !defined NOISE_CALIBRATION_MODE
 #error "At least one mode!"
 #endif
-
-// TODO: Get rid of LED matrix settings after moving LED controls to separate module
-#define LED_MATRIX_DATA_PIN 5
-#define LED_MATRIX_N_BANDS 16
-#define LED_MATRIX_N_PER_BAND 23
-// I soldered wrong way last 4 LEDs of first band and they died, hence the -4
-#define LED_MATRIX_N (LED_MATRIX_N_BANDS * LED_MATRIX_N_PER_BAND - 4)
 
 __attribute__((aligned(16))) float audioBands[AUDIO_N_BANDS] = {0.0};
 __attribute__((aligned(16))) float table[AUDIO_N_BANDS] = {0.0};
