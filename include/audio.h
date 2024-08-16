@@ -17,6 +17,7 @@ typedef int AudioSource;
 #define AUDIO_SOURCE_NONE -1
 #define AUDIO_SOURCE_MIC 0
 #define AUDIO_SOURCE_LINE_IN 1
+#define AUDIO_SOURCE_TYPE_MAX_VALUE 1
 
 void setupAudioSource(AudioSource audioSource);
 void teardownAudioSource(AudioSource audioSource);

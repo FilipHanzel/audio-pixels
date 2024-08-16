@@ -65,7 +65,8 @@ void controlerTask(void *pvParameters) {
 
     while (true) {
         if (debouncedRelease(&audioSourceBtnState, digitalRead(AUDIO_SOURCE_BUTTON_PIN))) {
-            audioSource = audioSource == AUDIO_SOURCE_MIC ? AUDIO_SOURCE_LINE_IN : AUDIO_SOURCE_MIC;
+            audioSource++;
+            audioSource %= AUDIO_SOURCE_TYPE_MAX_VALUE + 1;
             Command command = {
                 .type = set_audio_source,
                 .data = {.audioSource = audioSource},
