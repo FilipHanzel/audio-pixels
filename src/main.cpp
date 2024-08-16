@@ -173,23 +173,19 @@ void executorTask(void *pvParameters) {
         CRGB color = visualization == VISUALIZATION_RED_BARS ? CRGB::Red : CRGB::Green;
 
         for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
-            int offset = 0;
-            if (i > 0) offset -= 4;
-            int n = LED_MATRIX_N_PER_BAND;
-            if (i == 0) n -= 4;
-
-            int toLight = int(ledBars[i] * n);
-            if (toLight > n) {
-                toLight = n;
-            }
-            int toSkip = n - toLight;
+            int offset = i > 0 ? -4 : 0;
+            int barLength = i > 0 ? LED_MATRIX_N_PER_BAND : LED_MATRIX_N_PER_BAND - 4;
+            int toLight = int(ledBars[i] * LED_MATRIX_N_PER_BAND);
+            if (toLight > barLength) toLight = barLength;
+            toLight = toLight > LED_MATRIX_N_PER_BAND ? LED_MATRIX_N_PER_BAND : toLight;
+            int toSkip = barLength - toLight;
 
             if (i % 2 == 0) {
                 for (int j = 0; j < toLight; j++) {
-                    leds[offset + i * n + j] = color;
+                    leds[offset + i * LED_MATRIX_N_PER_BAND + j] = color;
                 }
                 for (int j = 0; j < toSkip; j++) {
-                    leds[offset + i * n + j + toLight] = CRGB::Black;
+                    leds[offset + i * LED_MATRIX_N_PER_BAND + j + toLight] = CRGB::Black;
                 }
             } else {
                 for (int j = 0; j < toSkip; j++) {
