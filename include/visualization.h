@@ -1,0 +1,10 @@
+#ifndef VISUALIZATION_H
+#define VISUALIZATION_H
+
+typedef int Visualization;
+#define VISUALIZATION_RED_BARS 0
+#define VISUALIZATION_GREEN_BARS 1
+#define VISUALIZATION_BLUE_BARS 2
+#define VISUALIZATION_TYPE_MAX_VALUE 2
+
+#endif

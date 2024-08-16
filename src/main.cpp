@@ -9,8 +9,10 @@
 #include "buttons.h"
 #include "config.h"
 #include "macros.h"
+#include "visualization.h"
 
 #define DEFAULT_AUDIO_SOURCE AUDIO_SOURCE_LINE_IN
+#define DEFAULT_VISUALIZATION VISUALIZATION_RED_BARS
 
 TaskHandle_t controlerTaskHandle;
 TaskHandle_t executorTaskHandle;
@@ -21,12 +23,6 @@ typedef enum {
     set_audio_source,
     set_visualization,
 } CommandType;
-
-typedef int Visualization;
-#define VISUALIZATION_RED_BARS 0
-#define VISUALIZATION_GREEN_BARS 1
-
-#define DEFAULT_VISUALIZATION 0
 
 typedef struct {
     CommandType type;
@@ -78,7 +74,8 @@ void controlerTask(void *pvParameters) {
         }
 
         if (debouncedRelease(&visualizationBtnState, digitalRead(VISUALIZATION_BUTTON_PIN))) {
-            visualization = visualization == VISUALIZATION_RED_BARS ? VISUALIZATION_GREEN_BARS : VISUALIZATION_RED_BARS;
+            visualization++;
+            visualization %= VISUALIZATION_TYPE_MAX_VALUE + 1;
             Command command = {
                 .type = set_visualization,
                 .data = {.visualization = visualization},
@@ -170,7 +167,19 @@ void executorTask(void *pvParameters) {
 
         // LEDs
 
-        CRGB color = visualization == VISUALIZATION_RED_BARS ? CRGB::Red : CRGB::Green;
+        CRGB color;
+        switch(visualization) {
+            case VISUALIZATION_RED_BARS:
+                color = CRGB::Red;
+                break;
+            case VISUALIZATION_GREEN_BARS:
+                color = CRGB::Green;
+                break;
+            case VISUALIZATION_BLUE_BARS:
+                color = CRGB::Blue;
+                break;
+        }
+
 
         for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
             int offset = i > 0 ? -4 : 0;
