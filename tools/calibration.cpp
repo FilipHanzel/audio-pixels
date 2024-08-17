@@ -132,9 +132,8 @@ void loop() {
     };
     for (int j = 0; j < nColours; j++) {
         int band = (animationCursor + j) % LED_MATRIX_N_BANDS;
-        int n = band > 0 ? LED_MATRIX_N_PER_BAND : LED_MATRIX_N_PER_BAND - 4;
 
-        for (int k = 0; k < n; k++) {
+        for (int k = 0; k < LED_MATRIX_N_PER_BAND; k++) {
             leds[band * LED_MATRIX_N_PER_BAND + k] = colours[j];
         }
     }
