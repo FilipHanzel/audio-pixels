@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#define FASTLED_INTERNAL  // silence FastLED SPI warning
+#define FASTLED_INTERNAL // silence FastLED SPI warning
 #include <FastLED.h>
 
 #include "audio.h"
@@ -17,7 +17,7 @@
 //
 //
 
-#define N 512  // calibration length
+#define N            512 // calibration length
 #define NOISE_MARGIN 0.5
 
 #if defined BAND_CALIBRATION_MODE && defined NOISE_CALIBRATION_MODE
@@ -132,11 +132,10 @@ void loop() {
     };
     for (int j = 0; j < nColours; j++) {
         int band = (animationCursor + j) % LED_MATRIX_N_BANDS;
-        int offset = band > 0 ? -4 : 0;  // offset is there to take dead LEDs into account
         int n = band > 0 ? LED_MATRIX_N_PER_BAND : LED_MATRIX_N_PER_BAND - 4;
 
         for (int k = 0; k < n; k++) {
-            leds[band * LED_MATRIX_N_PER_BAND + offset + k] = colours[j];
+            leds[band * LED_MATRIX_N_PER_BAND + k] = colours[j];
         }
     }
     animationCursor = ++animationCursor % LED_MATRIX_N_BANDS;
