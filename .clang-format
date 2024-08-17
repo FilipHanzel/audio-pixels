@@ -1,0 +1,8 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+IndentCaseLabels: true
+ColumnLimit: 0
+AlignAfterOpenBracket: BlockIndent
+AlignConsecutiveMacros: Consecutive
+AllowShortIfStatementsOnASingleLine: Always
+AllowShortLoopsOnASingleLine: true

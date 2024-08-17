@@ -124,8 +124,8 @@ __attribute__((aligned(16))) static float calibrationTableNone[AUDIO_N_BANDS] = 
 };
 
 static AudioSource currentAudioSource = AUDIO_SOURCE_NONE;
-static float* currentNoiseTable = noiseTableNone;
-static float* currentCalibrationTable = calibrationTableNone;
+static float *currentNoiseTable = noiseTableNone;
+static float *currentCalibrationTable = calibrationTableNone;
 
 __attribute__((aligned(16))) static int32_t audioBuffer[AUDIO_N_SAMPLES] = {0};
 __attribute__((aligned(16))) static float fftBuffer[AUDIO_N_SAMPLES * 2];
@@ -140,7 +140,7 @@ void setupAudioProcessing() {
     esp_err_t err = dsps_fft2r_init_fc32(NULL, AUDIO_N_SAMPLES);
     if (err != ESP_OK) {
         PRINTF("Not possible to initialize FFT2R. Error: 0x(%x). Halt!\n", err);
-        while (true);
+        while (true) continue;
     }
 }
 
@@ -171,13 +171,13 @@ static void setupMic() {
     esp_err_t err = i2s_driver_install(AUDIO_I2S_PORT, &i2sConfig, 0, NULL);
     if (err != ESP_OK) {
         PRINTF("Error installing I2S driver: 0x(%x). Halt!\n", err);
-        while (true);
+        while (true) continue;
     }
 
     err = i2s_set_pin(AUDIO_I2S_PORT, &i2sPinConfig);
     if (err != ESP_OK) {
         PRINTF("Error setting I2S pin: 0x(%x). Halt!\n", err);
-        while (true);
+        while (true) continue;
     }
 }
 
@@ -201,32 +201,32 @@ static void setupLineIn() {
     esp_err_t err = i2s_driver_install(AUDIO_I2S_PORT, &i2sConfig, 0, NULL);
     if (err != ESP_OK) {
         PRINTF("Error installing I2S driver: 0x(%x). Halt!\n", err);
-        while (true);
+        while (true) continue;
     }
 
     err = i2s_set_adc_mode(ADC_UNIT_1, AUDIO_LINE_IN_PIN);
     if (err != ESP_OK) {
         PRINTF("Error setting up ADC mode: 0x(%x). Halt!\n", err);
-        while (true);
+        while (true) continue;
     }
 
     err = adc1_config_channel_atten(AUDIO_LINE_IN_PIN, ADC_ATTEN_DB_12);
     if (err != ESP_OK) {
         PRINTF("Error setting up ADC attenuation: 0x(%x). Halt!\n", err);
-        while (true);
+        while (true) continue;
     }
 
     err = i2s_adc_enable(AUDIO_I2S_PORT);
     if (err != ESP_OK) {
         PRINTF("Error enabling ADC: 0x(%x). Halt!\n", err);
-        while (true);
+        while (true) continue;
     }
 }
 
 void setupAudioSource(AudioSource audioSource) {
     if (currentAudioSource != AUDIO_SOURCE_NONE) {
         PRINTF("Audio source already set up. Halt!\n");
-        while (true);
+        while (true) continue;
     }
     currentAudioSource = audioSource;
 
@@ -241,7 +241,7 @@ static void teardownMic() {
     esp_err_t err = i2s_driver_uninstall(AUDIO_I2S_PORT);
     if (err != ESP_OK) {
         PRINTF("Error uninstalling I2S driver: 0x(%x). Halt!\n", err);
-        while (true);
+        while (true) continue;
     }
 }
 
@@ -249,13 +249,13 @@ static void teardownLineIn() {
     esp_err_t err = i2s_adc_disable(AUDIO_I2S_PORT);
     if (err != ESP_OK) {
         PRINTF("Error disabling ADC: 0x(%x). Halt!\n", err);
-        while (true);
+        while (true) continue;
     }
 
     err = i2s_driver_uninstall(AUDIO_I2S_PORT);
     if (err != ESP_OK) {
         PRINTF("Error uninstalling I2S driver: 0x(%x). Halt!\n", err);
-        while (true);
+        while (true) continue;
     }
 
     // Without this, switching from line-in to mic won't work.
@@ -264,14 +264,14 @@ static void teardownLineIn() {
     err = adc_set_i2s_data_source(ADC_I2S_DATA_SRC_IO_SIG);
     if (err != ESP_OK) {
         PRINTF("Error uninstalling I2S driver: 0x(%x). Halt!\n", err);
-        while (true);
+        while (true) continue;
     }
 }
 
 void teardownAudioSource(AudioSource audioSource) {
     if (currentAudioSource == AUDIO_SOURCE_NONE) {
         PRINTF("Audio source is not set up. Halt!\n");
-        while (true);
+        while (true) continue;
     }
     currentAudioSource = AUDIO_SOURCE_NONE;
 
@@ -319,7 +319,7 @@ void setupAudioTables(AudioSource audioSource) {
     setupAudioCalibrationTable(audioSource);
 }
 
-void processAudioData(float* bands) {
+void processAudioData(float *bands) {
     for (int i = 0; i < AUDIO_N_SAMPLES; i++) {
         fftBuffer[i * 2 + 0] = audioBuffer[i];
         fftBuffer[i * 2 + 1] = 0;
@@ -328,12 +328,12 @@ void processAudioData(float* bands) {
     esp_err_t err = dsps_fft2r_fc32(fftBuffer, AUDIO_N_SAMPLES);
     if (err != ESP_OK) {
         PRINTF("FFT2R error: 0x(%x). Halt!\n", err);
-        while (true);
+        while (true) continue;
     }
     err = dsps_bit_rev2r_fc32(fftBuffer, AUDIO_N_SAMPLES);
     if (err != ESP_OK) {
         PRINTF("FFT2R bit reverse error: 0x(%x). Halt!\n", err);
-        while (true);
+        while (true) continue;
     }
 
     for (int i = 0; i < AUDIO_N_SAMPLES; i++) {
@@ -349,7 +349,7 @@ void processAudioData(float* bands) {
 
             if (bandIdx > AUDIO_N_BANDS) {
                 PRINTF("Frequency band grouping error. Halt!\n");
-                while (true);
+                while (true) continue;
             }
         }
         bands[bandIdx] += fftBuffer[i];
@@ -363,6 +363,6 @@ void processAudioData(float* bands) {
     }
 }
 
-void getInternalAudioBuffer(int32_t** buffer) {
+void getInternalAudioBuffer(int32_t **buffer) {
     *buffer = audioBuffer;
 }

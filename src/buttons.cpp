@@ -1,7 +1,7 @@
 #include "buttons.h"
 
 #define BUTTON_DEBOUNCE_DELAY 20
-#define TIME_PASSED_SINCE(T) (millis() - T)
+#define TIME_PASSED_SINCE(T)  (millis() - T)
 
 bool debouncedRelease(ButtonDebounceState *bds, int reading) {
     bool is_release = false;
