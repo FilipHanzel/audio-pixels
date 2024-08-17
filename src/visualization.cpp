@@ -36,26 +36,23 @@ void teardownVisualization(Visualization visualization) {
 
 void updateVisualization(float *bars) {
     for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
-        int offset = i > 0 ? -4 : 0;
-        int barLength = i > 0 ? LED_MATRIX_N_PER_BAND : LED_MATRIX_N_PER_BAND - 4;
         int toLight = int(bars[i] * LED_MATRIX_N_PER_BAND);
-        if (toLight > barLength) toLight = barLength;
-        toLight = toLight > LED_MATRIX_N_PER_BAND ? LED_MATRIX_N_PER_BAND : toLight;
-        int toSkip = barLength - toLight;
+        if (toLight > LED_MATRIX_N_PER_BAND) toLight = LED_MATRIX_N_PER_BAND;
+        int toSkip = LED_MATRIX_N_PER_BAND - toLight;
 
         if (i % 2 == 0) {
             for (int j = 0; j < toLight; j++) {
-                leds[offset + i * LED_MATRIX_N_PER_BAND + j] = color;
+                leds[i * LED_MATRIX_N_PER_BAND + j] = color;
             }
             for (int j = 0; j < toSkip; j++) {
-                leds[offset + i * LED_MATRIX_N_PER_BAND + j + toLight] = CRGB::Black;
+                leds[i * LED_MATRIX_N_PER_BAND + j + toLight] = CRGB::Black;
             }
         } else {
             for (int j = 0; j < toSkip; j++) {
-                leds[offset + i * LED_MATRIX_N_PER_BAND + j] = CRGB::Black;
+                leds[i * LED_MATRIX_N_PER_BAND + j] = CRGB::Black;
             }
             for (int j = 0; j < toLight; j++) {
-                leds[offset + i * LED_MATRIX_N_PER_BAND + j + toSkip] = color;
+                leds[i * LED_MATRIX_N_PER_BAND + j + toSkip] = color;
             }
         }
     }

@@ -4,8 +4,7 @@
 #define LED_MATRIX_DATA_PIN 5
 #define LED_MATRIX_N_BANDS 16
 #define LED_MATRIX_N_PER_BAND 23
-// I soldered wrong way last 4 leds of first band and they died, hence the -4 
-#define LED_MATRIX_N (LED_MATRIX_N_BANDS * LED_MATRIX_N_PER_BAND - 4)
+#define LED_MATRIX_N (LED_MATRIX_N_BANDS * LED_MATRIX_N_PER_BAND)
 
 typedef int Visualization;
 #define VISUALIZATION_NONE -1
