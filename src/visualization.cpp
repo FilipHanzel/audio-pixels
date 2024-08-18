@@ -164,7 +164,7 @@ static void updateColorBars(float *bars) {
         int toSkip = LED_MATRIX_N_PER_BAND - toLight;
 
         for (int j = 0; j < toLight; j++) {
-            buffer[i * LED_MATRIX_N_PER_BAND + j] = 128;
+            buffer[i * LED_MATRIX_N_PER_BAND + j] = 128 + j * 3;
         }
         for (int j = 0; j < toSkip; j++) {
             buffer[i * LED_MATRIX_N_PER_BAND + j + toLight] = 1;
