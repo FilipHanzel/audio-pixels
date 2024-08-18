@@ -37,16 +37,16 @@ DEFINE_GRADIENT_PALETTE(blue_gp){
 };
 
 DEFINE_GRADIENT_PALETTE(heatmapGreen_gp){
-    0, 0, 5, 0,
-    64, 0, 150, 0,
+    0, 0, 1, 0,
+    64, 0, 255, 0,
     128, 255, 0, 0,
     192, 255, 85, 0,
     255, 255, 255, 50
 };
 
 DEFINE_GRADIENT_PALETTE(heatmapBlue_gp){
-    0, 0, 0, 5,
-    64, 0, 0, 200,
+    0, 0, 0, 1,
+    64, 0, 0, 255,
     128, 255, 0, 0,
     192, 255, 85, 0,
     255, 255, 255, 50
