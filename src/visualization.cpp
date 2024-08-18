@@ -73,7 +73,7 @@ const static CRGBPalette16 heatmapGreenPalette = heatmapGreen_gp;
 const static CRGBPalette16 heatmapBluePalette = heatmapBlue_gp;
 const static CRGBPalette16 magmaPinkPalette = magmaPink_gp;
 
-static CRGB buffer[LED_MATRIX_N] = {CRGB::Black};
+static uint8_t buffer[LED_MATRIX_N] = {0};
 static CRGB leds[LED_MATRIX_N] = {CRGB::Black};
 static VisualizationType currentVisualization = VISUALIZATION_TYPE_NONE;
 static CRGBPalette16 currentPalette = blankPalette;
@@ -135,7 +135,7 @@ void teardownVisualization(VisualizationType visualization) {
 
     currentPalette = blankPalette;
     for (int i = 0; i < LED_MATRIX_N; i++) {
-        buffer[i] = CRGB::Black;
+        buffer[i] = 0;
         leds[i] = CRGB::Black;
     }
 }
@@ -146,11 +146,11 @@ static void pushBuffer() {
 
         if (i % 2 == 0) {
             for (int j = 0; j < LED_MATRIX_N_PER_BAND; j++) {
-                leds[offset + j] = buffer[offset + j];
+                leds[offset + j] = ColorFromPalette(currentPalette, buffer[offset + j]);
             }
         } else {
             for (int j = 0, k = LED_MATRIX_N_PER_BAND - 1; j < LED_MATRIX_N_PER_BAND; j++, k--) {
-                leds[offset + k] = buffer[offset + j];
+                leds[offset + k] = ColorFromPalette(currentPalette, buffer[offset + j]);
             }
         }
     }
@@ -164,10 +164,10 @@ static void updateColorBars(float *bars) {
         int toSkip = LED_MATRIX_N_PER_BAND - toLight;
 
         for (int j = 0; j < toLight; j++) {
-            buffer[i * LED_MATRIX_N_PER_BAND + j] = ColorFromPalette(currentPalette, 128);
+            buffer[i * LED_MATRIX_N_PER_BAND + j] = 128;
         }
         for (int j = 0; j < toSkip; j++) {
-            buffer[i * LED_MATRIX_N_PER_BAND + j + toLight] = ColorFromPalette(currentPalette, 1);
+            buffer[i * LED_MATRIX_N_PER_BAND + j + toLight] = 1;
         }
     }
 }
@@ -181,7 +181,7 @@ static void updateSpectrum(float *bars) {
         for (int j = LED_MATRIX_N_PER_BAND - 1; j > 0; j--) {
             buffer[i * LED_MATRIX_N_PER_BAND + j] = buffer[i * LED_MATRIX_N_PER_BAND + j - 1];
         }
-        buffer[i * LED_MATRIX_N_PER_BAND] = ColorFromPalette(currentPalette, colorIndex);
+        buffer[i * LED_MATRIX_N_PER_BAND] = colorIndex;
     }
 }
 
