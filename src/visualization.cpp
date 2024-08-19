@@ -65,7 +65,16 @@ DEFINE_GRADIENT_PALETTE(magmaPink_gp){
     255, 255, 255, 255
 };
 
-DEFINE_GRADIENT_PALETTE(fire_gp){
+DEFINE_GRADIENT_PALETTE(fireRed_gp){
+    0, 4, 0, 0,
+    50, 5, 0, 0,
+    75, 40, 0, 0,
+    90, 60, 0, 0,
+    110, 150, 150, 10,
+    255, 210, 200, 200
+};
+
+DEFINE_GRADIENT_PALETTE(fireBlue_gp){
     0, 0, 0, 2,
     50, 5, 0, 8,
     75, 40, 0, 2,
@@ -74,6 +83,16 @@ DEFINE_GRADIENT_PALETTE(fire_gp){
     255, 210, 200, 200
 };
 
+DEFINE_GRADIENT_PALETTE(fireGreen_gp){
+    0, 0, 5, 0,
+    50, 0, 5, 0,
+    75, 0, 40, 0,
+    90, 45, 60, 0,
+    110, 220, 110, 10,
+    255, 200, 210, 200
+};
+
+
 const static CRGBPalette16 blankPalette = blank_gp;
 const static CRGBPalette16 redPalette = red_gp;
 const static CRGBPalette16 greenPalette = green_gp;
@@ -81,7 +100,9 @@ const static CRGBPalette16 bluePalette = blue_gp;
 const static CRGBPalette16 heatmapGreenPalette = heatmapGreen_gp;
 const static CRGBPalette16 heatmapBluePalette = heatmapBlue_gp;
 const static CRGBPalette16 magmaPinkPalette = magmaPink_gp;
-const static CRGBPalette16 firePalette = fire_gp;
+const static CRGBPalette16 fireRedPalette = fireRed_gp;
+const static CRGBPalette16 fireBluePalette = fireBlue_gp;
+const static CRGBPalette16 fireGreenPalette = fireGreen_gp;
 
 static uint8_t buffer[LED_MATRIX_N] = {0};
 static CRGB leds[LED_MATRIX_N] = {CRGB::Black};
@@ -135,8 +156,15 @@ void setVisualizationPalette(VisualizationPalette palette) {
             break;
         case VISUALIZATION_TYPE_FIRE:
             switch (palette) {
-                case VISUALIZATION_PALETTE_FIRE:
-                    currentPalette = firePalette;
+                case VISUALIZATION_PALETTE_FIRE_RED:
+                    currentPalette = fireRedPalette;
+                    break;
+                case VISUALIZATION_PALETTE_FIRE_BLUE:
+                    currentPalette = fireBluePalette;
+                    break;
+                case VISUALIZATION_PALETTE_FIRE_GREEN:
+                    currentPalette = fireGreenPalette;
+                    break;
             }
             break;
     }

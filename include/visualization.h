@@ -26,8 +26,10 @@ typedef int VisualizationPalette;
 #define VISUALIZATION_PALETTE_SPECTRUM_MAGMA_PINK    2
 #define VISUALIZATION_PALETTE_SPECTRUM_MAX_VALUE     2
 
-#define VISUALIZATION_PALETTE_FIRE           0
-#define VISUALIZATION_PALETTE_FIRE_MAX_VALUE 0
+#define VISUALIZATION_PALETTE_FIRE_RED       0
+#define VISUALIZATION_PALETTE_FIRE_BLUE      1
+#define VISUALIZATION_PALETTE_FIRE_GREEN     2
+#define VISUALIZATION_PALETTE_FIRE_MAX_VALUE 2
 
 void setupLedStrip();
 void setupVisualization(VisualizationType visualization);
