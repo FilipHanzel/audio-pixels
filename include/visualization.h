@@ -10,7 +10,8 @@ typedef int VisualizationType;
 #define VISUALIZATION_TYPE_NONE      -1
 #define VISUALIZATION_TYPE_BARS      0
 #define VISUALIZATION_TYPE_SPECTRUM  1
-#define VISUALIZATION_TYPE_MAX_VALUE 1
+#define VISUALIZATION_TYPE_FIRE      2
+#define VISUALIZATION_TYPE_MAX_VALUE 2
 
 typedef int VisualizationPalette;
 #define VISUALIZATION_PALETTE_NONE -1
@@ -24,6 +25,9 @@ typedef int VisualizationPalette;
 #define VISUALIZATION_PALETTE_SPECTRUM_HEATMAP_BLUE  1
 #define VISUALIZATION_PALETTE_SPECTRUM_MAGMA_PINK    2
 #define VISUALIZATION_PALETTE_SPECTRUM_MAX_VALUE     2
+
+#define VISUALIZATION_PALETTE_FIRE           0
+#define VISUALIZATION_PALETTE_FIRE_MAX_VALUE 0
 
 void setupLedStrip();
 void setupVisualization(VisualizationType visualization);

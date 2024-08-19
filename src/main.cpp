@@ -97,6 +97,9 @@ void controlerTask(void *pvParameters) {
                 case VISUALIZATION_TYPE_SPECTRUM:
                     maxValue = VISUALIZATION_PALETTE_SPECTRUM_MAX_VALUE;
                     break;
+                case VISUALIZATION_TYPE_FIRE:
+                    maxValue = VISUALIZATION_PALETTE_FIRE_MAX_VALUE;
+                    break;
             }
 
             visualizationPalette++;

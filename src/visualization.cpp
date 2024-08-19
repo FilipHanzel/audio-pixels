@@ -65,6 +65,15 @@ DEFINE_GRADIENT_PALETTE(magmaPink_gp){
     255, 255, 255, 255
 };
 
+DEFINE_GRADIENT_PALETTE(fire_gp){
+    0, 0, 0, 2,
+    50, 5, 0, 8,
+    75, 40, 0, 2,
+    90, 60, 0, 0,
+    110, 150, 150, 10,
+    255, 210, 200, 200
+};
+
 const static CRGBPalette16 blankPalette = blank_gp;
 const static CRGBPalette16 redPalette = red_gp;
 const static CRGBPalette16 greenPalette = green_gp;
@@ -72,6 +81,7 @@ const static CRGBPalette16 bluePalette = blue_gp;
 const static CRGBPalette16 heatmapGreenPalette = heatmapGreen_gp;
 const static CRGBPalette16 heatmapBluePalette = heatmapBlue_gp;
 const static CRGBPalette16 magmaPinkPalette = magmaPink_gp;
+const static CRGBPalette16 firePalette = fire_gp;
 
 static uint8_t buffer[LED_MATRIX_N] = {0};
 static CRGB leds[LED_MATRIX_N] = {CRGB::Black};
@@ -123,6 +133,12 @@ void setVisualizationPalette(VisualizationPalette palette) {
                     break;
             }
             break;
+        case VISUALIZATION_TYPE_FIRE:
+            switch (palette) {
+                case VISUALIZATION_PALETTE_FIRE:
+                    currentPalette = firePalette;
+            }
+            break;
     }
 }
 
@@ -132,7 +148,6 @@ void teardownVisualization(VisualizationType visualization) {
         while (true) continue;
     }
     currentVisualization = VISUALIZATION_TYPE_NONE;
-
     currentPalette = blankPalette;
     for (int i = 0; i < LED_MATRIX_N; i++) {
         buffer[i] = 0;
@@ -185,6 +200,19 @@ static void updateSpectrum(float *bars) {
     }
 }
 
+static void updateFire(float *bars) {
+    for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
+        float bar = bars[i];
+        if (bar > 1.0) bar = 1.0;
+
+        for (int j = LED_MATRIX_N_PER_BAND - 1; j > 0; j--) {
+            buffer[i * LED_MATRIX_N_PER_BAND + j] = buffer[i * LED_MATRIX_N_PER_BAND + j - 1] * 0.975;
+        }
+        buffer[i * LED_MATRIX_N_PER_BAND] += int(bar * 255.0);
+        buffer[i * LED_MATRIX_N_PER_BAND] /= 2.0;
+    }
+}
+
 void updateVisualization(float *bars) {
     switch (currentVisualization) {
         case VISUALIZATION_TYPE_BARS:
@@ -192,6 +220,9 @@ void updateVisualization(float *bars) {
             break;
         case VISUALIZATION_TYPE_SPECTRUM:
             updateSpectrum(bars);
+            break;
+        case VISUALIZATION_TYPE_FIRE:
+            updateFire(bars);
             break;
     }
     pushBuffer();
