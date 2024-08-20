@@ -110,7 +110,8 @@ const static CRGBPalette16 fireRedPalette = fireRed_gp;
 const static CRGBPalette16 fireBluePalette = fireBlue_gp;
 const static CRGBPalette16 fireGreenPalette = fireGreen_gp;
 
-static uint8_t buffer[LED_MATRIX_N] = {0};
+static uint8_t bufferA[LED_MATRIX_N] = {0};
+static uint8_t bufferB[LED_MATRIX_N] = {0};
 static CRGB leds[LED_MATRIX_N] = {CRGB::Black};
 static VisualizationType currentVisualization = VISUALIZATION_TYPE_NONE;
 static CRGBPalette16 currentPalette = blankPalette;
@@ -184,7 +185,8 @@ void teardownVisualization(VisualizationType visualization) {
     currentVisualization = VISUALIZATION_TYPE_NONE;
     currentPalette = blankPalette;
     for (int i = 0; i < LED_MATRIX_N; i++) {
-        buffer[i] = 0;
+        bufferA[i] = 0;
+        bufferB[i] = 0;
         leds[i] = CRGB::Black;
     }
 }
@@ -195,12 +197,53 @@ static void pushBuffer() {
 
         if (i % 2 == 0) {
             for (int j = 0; j < LED_MATRIX_N_PER_BAND; j++) {
-                leds[offset + j] = ColorFromPalette(currentPalette, buffer[offset + j]);
+                leds[offset + j] = ColorFromPalette(currentPalette, bufferA[offset + j]);
             }
         } else {
             for (int j = 0, k = LED_MATRIX_N_PER_BAND - 1; j < LED_MATRIX_N_PER_BAND; j++, k--) {
-                leds[offset + k] = ColorFromPalette(currentPalette, buffer[offset + j]);
+                leds[offset + k] = ColorFromPalette(currentPalette, bufferA[offset + j]);
             }
+        }
+    }
+}
+
+// clang-format off
+static float gaussianKernel[5][5]{
+    {1,  4,  7,  4, 1},
+    {4, 16, 26, 16, 4},
+    {7, 26, 41, 26, 7},
+    {4, 16, 26, 16, 4},
+    {1,  4,  7,  4, 1}
+};
+// clang-format on
+
+void gaussianBlur(int nCols, int nRows, uint8_t *inp, uint8_t *out) {
+    const int margin = 2;
+
+    float sum = 0.0;
+    int count = 0;
+
+    for (int col = 0; col < nCols; col++) {
+        for (int row = 0; row < nRows; row++) {
+            sum = 0.0;
+            count = 0;
+
+            for (int x = col - margin; x <= col + margin; x++) {
+                if (x == nCols) break;
+                if (x < 0) x = 0;
+
+                for (int y = row - margin; y <= row + margin; y++) {
+                    if (y == nRows) break;
+                    if (y < 0) y = 0;
+
+                    float kernelValue = gaussianKernel[y - row + margin][x - col + margin];
+
+                    count += kernelValue;
+                    sum += kernelValue * inp[x * nRows + y];
+                }
+            }
+
+            out[col * nRows + row] = uint8_t(round(sum / count));
         }
     }
 }
@@ -213,10 +256,10 @@ static void updateColorBars(float *bars) {
         int toSkip = LED_MATRIX_N_PER_BAND - toLight;
 
         for (int j = 0; j < toLight; j++) {
-            buffer[i * LED_MATRIX_N_PER_BAND + j] = 128 + j * 3;
+            bufferA[i * LED_MATRIX_N_PER_BAND + j] = 128 + j * 3;
         }
         for (int j = 0; j < toSkip; j++) {
-            buffer[i * LED_MATRIX_N_PER_BAND + j + toLight] = 1;
+            bufferA[i * LED_MATRIX_N_PER_BAND + j + toLight] = 1;
         }
     }
 }
@@ -228,9 +271,9 @@ static void updateSpectrum(float *bars) {
         uint8_t colorIndex = int(bar * 255.0);
 
         for (int j = LED_MATRIX_N_PER_BAND - 1; j > 0; j--) {
-            buffer[i * LED_MATRIX_N_PER_BAND + j] = buffer[i * LED_MATRIX_N_PER_BAND + j - 1];
+            bufferA[i * LED_MATRIX_N_PER_BAND + j] = bufferA[i * LED_MATRIX_N_PER_BAND + j - 1];
         }
-        buffer[i * LED_MATRIX_N_PER_BAND] = colorIndex;
+        bufferA[i * LED_MATRIX_N_PER_BAND] = colorIndex;
     }
 }
 
@@ -240,11 +283,13 @@ static void updateFire(float *bars) {
         if (bar > 1.0) bar = 1.0;
 
         for (int j = LED_MATRIX_N_PER_BAND - 1; j > 0; j--) {
-            buffer[i * LED_MATRIX_N_PER_BAND + j] = buffer[i * LED_MATRIX_N_PER_BAND + j - 1] * 0.975;
+            bufferB[i * LED_MATRIX_N_PER_BAND + j] = bufferB[i * LED_MATRIX_N_PER_BAND + j - 1] * 0.975;
         }
-        buffer[i * LED_MATRIX_N_PER_BAND] += int(bar * 255.0);
-        buffer[i * LED_MATRIX_N_PER_BAND] /= 2.0;
+        bufferB[i * LED_MATRIX_N_PER_BAND] += int(bar * 255.0);
+        bufferB[i * LED_MATRIX_N_PER_BAND] /= 2.0;
     }
+
+    gaussianBlur(LED_MATRIX_N_BANDS, LED_MATRIX_N_PER_BAND, bufferB, bufferA);
 }
 
 void updateVisualization(float *bars) {
