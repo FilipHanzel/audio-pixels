@@ -29,22 +29,22 @@ __attribute__((aligned(16))) static float noiseTableLineIn[AUDIO_N_BANDS] = {
 };
 
 __attribute__((aligned(16))) static float calibrationTableLineIn[AUDIO_N_BANDS] = {
-    1.84,
-    2.55,
-    2.80,
-    3.00,
-    3.34,
-    2.83,
-    2.81,
-    2.41,
-    2.41,
-    1.84,
-    1.77,
-    1.55,
-    1.26,
-    1.31,
-    1.00,
+    5.15,
+    4.23,
+    6.04,
+    7.00,
+    4.19,
+    4.16,
+    3.67,
+    3.13,
+    3.16,
+    2.23,
+    1.99,
+    1.71,
+    1.45,
+    1.24,
     1.01,
+    1.00,
 };
 
 __attribute__((aligned(16))) static float noiseTableMic[AUDIO_N_BANDS] = {
@@ -129,12 +129,16 @@ static float *currentCalibrationTable = calibrationTableNone;
 
 __attribute__((aligned(16))) static int32_t audioBuffer[AUDIO_N_SAMPLES] = {0};
 __attribute__((aligned(16))) static float fftBuffer[AUDIO_N_SAMPLES * 2];
-__attribute__((aligned(16))) static float barkThresholds[AUDIO_N_BANDS] = {0};
+__attribute__((aligned(16))) static float frequencyThresholds[AUDIO_N_BANDS] = {0};
 
 void setupAudioProcessing() {
-    float barkStep = 6.0 * asinh(AUDIO_SAMPLING_RATE / 2.0 / 600.0) / AUDIO_N_BANDS;
+    // Frequency thresholds are based on a modified Bark scale.
+    // To better suit audio visualization needs, higher frequencies
+    // are compressed into fewer bands, as they are ususlly not the
+    // key components of audio signal.
+    float step = (6.0 + 1.7) * asinh(AUDIO_SAMPLING_RATE / 2.0 / 600.0) / AUDIO_N_BANDS;
     for (int i = 0; i < AUDIO_N_BANDS; i++) {
-        barkThresholds[i] = 600.0 * sinh(barkStep * (i + 1) / 6.0);
+        frequencyThresholds[i] = 600.0 / 3.3 * sinh(step * (i + 1) / 6.0);
     }
 
     esp_err_t err = dsps_fft2r_init_fc32(NULL, AUDIO_N_SAMPLES);
@@ -344,7 +348,7 @@ void processAudioData(float *bands) {
     int bandIdx = 0;
     for (int i = 1; i < AUDIO_N_SAMPLES / 2; i++) {
         float frequency = i * AUDIO_SAMPLING_RATE / AUDIO_N_SAMPLES;
-        if (barkThresholds[bandIdx] < frequency) {
+        if (frequencyThresholds[bandIdx] < frequency) {
             bandIdx++;
 
             if (bandIdx > AUDIO_N_BANDS) {
