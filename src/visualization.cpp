@@ -5,14 +5,6 @@
 
 #include "macros.h"
 
-typedef struct {
-    CRGB color;
-} VisStateColorBars;
-
-typedef struct {
-    CRGBPalette16 palette;
-} VisStateSpectrum;
-
 // clang-format off
 
 DEFINE_GRADIENT_PALETTE(blank_gp){
