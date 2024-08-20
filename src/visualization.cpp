@@ -243,7 +243,11 @@ static void gaussianBlur(int nCols, int nRows, uint8_t *inp, uint8_t *out) {
 
 static void updateColorBars(float *bands) {
     for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
-        float band = bands[i];
+        bandsBuffer[i] = bands[i] > bandsBuffer[i] ? bands[i] : bandsBuffer[i] * 0.91;
+    }
+
+    for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
+        float band = bandsBuffer[i];
         if (band > 1.0) band = 1.0;
         int toLight = int(band * LED_MATRIX_N_PER_BAND);
         int toSkip = LED_MATRIX_N_PER_BAND - toLight;
@@ -259,7 +263,11 @@ static void updateColorBars(float *bands) {
 
 static void updateSpectrum(float *bands) {
     for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
-        float band = bands[i];
+        bandsBuffer[i] = bands[i] > bandsBuffer[i] ? bands[i] : bandsBuffer[i] * 0.92;
+    }
+
+    for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
+        float band = bandsBuffer[i];
         if (band > 1.0) band = 1.0;
         uint8_t colorIndex = int(band * 255.0);
 
@@ -272,7 +280,11 @@ static void updateSpectrum(float *bands) {
 
 static void updateFire(float *bands) {
     for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
-        float band = bands[i];
+        bandsBuffer[i] = bands[i] > bandsBuffer[i] ? bands[i] : bandsBuffer[i] * 0.93;
+    }
+
+    for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
+        float band = bandsBuffer[i];
         if (band > 1.0) band = 1.0;
 
         for (int j = LED_MATRIX_N_PER_BAND - 1; j > 0; j--) {
@@ -286,19 +298,15 @@ static void updateFire(float *bands) {
 }
 
 void updateVisualization(float *bands) {
-    for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
-        bandsBuffer[i] = bands[i] > bandsBuffer[i] ? bands[i] : bandsBuffer[i] * 0.94;
-    }
-
     switch (currentVisualization) {
         case VISUALIZATION_TYPE_BARS:
-            updateColorBars(bandsBuffer);
+            updateColorBars(bands);
             break;
         case VISUALIZATION_TYPE_SPECTRUM:
-            updateSpectrum(bandsBuffer);
+            updateSpectrum(bands);
             break;
         case VISUALIZATION_TYPE_FIRE:
-            updateFire(bandsBuffer);
+            updateFire(bands);
             break;
     }
     pushBuffer();
