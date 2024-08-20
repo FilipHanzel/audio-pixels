@@ -10,6 +10,7 @@
 
 #define DEFAULT_AUDIO_SOURCE       AUDIO_SOURCE_LINE_IN
 #define DEFAULT_VISUALIZATION_TYPE VISUALIZATION_TYPE_BARS
+#define DEFAULT_BAND_SCALE         100000
 
 TaskHandle_t controlerTaskHandle;
 TaskHandle_t executorTaskHandle;
@@ -122,7 +123,7 @@ void executorTask(void *pvParameters) {
     setupAudioSource(audioSource);
     setupAudioTables(audioSource);
     setupAudioProcessing();
-    float bandScale = 0.0;
+    float bandScale = DEFAULT_BAND_SCALE;
 
     VisualizationType visualizationType = DEFAULT_VISUALIZATION_TYPE;
     __attribute__((aligned(16))) float ledBars[LED_MATRIX_N_BANDS] = {0.0};
@@ -143,7 +144,7 @@ void executorTask(void *pvParameters) {
                     setupAudioSource(audioSource);
                     setupAudioTables(audioSource);
 
-                    bandScale = 0.0;
+                    bandScale = DEFAULT_BAND_SCALE;
                     break;
                 case set_visualization_type:
                     teardownVisualization(visualizationType);
@@ -185,7 +186,7 @@ void executorTask(void *pvParameters) {
         for (int i = 0; i < AUDIO_N_BANDS; i++) {
             max = max < audioBands[i] ? audioBands[i] : max;
         }
-        bandScale = max > bandScale ? max : bandScale * 0.99;
+        bandScale = (max + bandScale * 199.0) / 200.0;
         bandScale = bandScale < 1.0 ? 1.0 : bandScale;
 
         for (int i = 0; i < AUDIO_N_BANDS; i++) {
