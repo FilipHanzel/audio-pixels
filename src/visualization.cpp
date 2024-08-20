@@ -217,7 +217,7 @@ static float gaussianKernel[5][5]{
 };
 // clang-format on
 
-void gaussianBlur(int nCols, int nRows, uint8_t *inp, uint8_t *out) {
+static void gaussianBlur(int nCols, int nRows, uint8_t *inp, uint8_t *out) {
     const int margin = 2;
 
     float sum = 0.0;
