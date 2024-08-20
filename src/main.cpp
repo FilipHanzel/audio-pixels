@@ -195,10 +195,8 @@ void executorTask(void *pvParameters) {
 
             audioBands[i] = audioBandsOld[i] * 0.4 + audioBands[i] * 0.6;
             audioBandsOld[i] = audioBands[i];
-
-            ledBars[i] = audioBands[i] > ledBars[i] ? audioBands[i] : ledBars[i] * 0.94;
         }
 
-        updateVisualization(ledBars);
+        updateVisualization(audioBands);
     }
 }
