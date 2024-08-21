@@ -15,50 +15,63 @@ DEFINE_GRADIENT_PALETTE(blank_gp){
 DEFINE_GRADIENT_PALETTE(warm_gp){
       0,   0,   0,  0,
      70, 100,   0,  0,
-    128, 150,   0,  0,
-    140, 150,  40,  0,
+    100, 150,   0,  0,
+    150, 150,  40,  0,
     255, 255, 110, 60
 };
 
-DEFINE_GRADIENT_PALETTE(green_gp){
+DEFINE_GRADIENT_PALETTE(ocean_gp){
       0,   0,   0,   0,
-    128,   0, 255,   0,
-    255, 200, 255, 200
+     70,   0, 100,   0,
+    100,   0, 150,  10,
+    150,  10, 150,  40,
+    255, 110, 255, 220
 };
 
-DEFINE_GRADIENT_PALETTE(blue_gp){
+DEFINE_GRADIENT_PALETTE(funky_gp){
       0,   0,   0,   0,
-    128,   0,   0, 255,
-    255, 200, 200, 255
+     90, 150,   0,  50,
+    100,  50,   0, 250,
+    110,  10,  10, 100,
+    255, 200, 200,   0
+};
+
+DEFINE_GRADIENT_PALETTE(heatmapRed_gp){
+      0,   0,   0,   0,
+     70, 100,   0,   0,
+    100, 150,   0,   0,
+    150, 150,  40,   0,
+    255, 255, 110, 100
 };
 
 DEFINE_GRADIENT_PALETTE(heatmapGreen_gp){
       0,   0,   1,  0,
-     64,   0, 255,  0,
-    128, 255,   0,  0,
-    192, 255,  85,  0,
-    255, 255, 255, 50
+     70,   0,  50,  0,
+    120,  75, 100,  0,
+    140, 100,  75,  0,
+    255, 150,   0,  0
 };
 
 DEFINE_GRADIENT_PALETTE(heatmapBlue_gp){
-      0,   0,   0,   1,
-     64,   0,   0, 255,
-    128, 255,   0,   0,
-    192, 255,  85,   0,
-    255, 255, 255,  50
+      0,   0,  0,   1,
+     70,   0,  0,  30,
+    120,   0,  0, 100,
+    140,  50, 50,  70,
+    220, 150,  0,   0,
+    255, 170,  0,   0
 };
 
-DEFINE_GRADIENT_PALETTE(magmaPink_gp){
+DEFINE_GRADIENT_PALETTE(heatmapPink_gp){
       0,   0,   0,   4,
-     30,  28,  16,  68,
-     60,  79,  18, 123,
-     90, 129,  37, 129,
-    120, 181,  54, 103,
-    150, 229,  80,  63,
-    180, 252, 136,  37,
-    210, 251, 194,  71,
-    240, 254, 253, 191,
-    255, 255, 255, 255
+     30,  14,   8,  34,
+     60,  39,   9,  64,
+     90,  67,  14,  65,
+    130,  80,  25,  50,
+    170, 140,  65,  41,
+    195, 165, 106,  27,
+    230, 198, 150,  55,
+    240, 199, 198, 150,
+    255, 200, 200, 200
 };
 
 DEFINE_GRADIENT_PALETTE(fireRed_gp){
@@ -82,24 +95,25 @@ DEFINE_GRADIENT_PALETTE(fireBlue_gp){
 };
 
 DEFINE_GRADIENT_PALETTE(fireGreen_gp){
-      0,   0,   3,   0,
-     40,   0,   6,   0,
+      0,   0,   2,   0,
+     40,   0,   5,   0,
      55,   0,  40,   0,
      60,  45,  60,   0,
-     70,  55,  70,   0,
-     90, 220, 140,  10,
-    255, 200, 210, 200
+     65,  55,  70,   0,
+     80, 220, 140,  10,
+    255, 210, 200, 200
 };
 
 // clang-format on
 
 const static CRGBPalette16 blankPalette = blank_gp;
 const static CRGBPalette16 warmPalette = warm_gp;
-const static CRGBPalette16 greenPalette = green_gp;
-const static CRGBPalette16 bluePalette = blue_gp;
+const static CRGBPalette16 oceanPalette = ocean_gp;
+const static CRGBPalette16 funkyPalette = funky_gp;
+const static CRGBPalette16 heatmapRedPalette = heatmapRed_gp;
 const static CRGBPalette16 heatmapGreenPalette = heatmapGreen_gp;
 const static CRGBPalette16 heatmapBluePalette = heatmapBlue_gp;
-const static CRGBPalette16 magmaPinkPalette = magmaPink_gp;
+const static CRGBPalette16 heatmapPinkPalette = heatmapPink_gp;
 const static CRGBPalette16 fireRedPalette = fireRed_gp;
 const static CRGBPalette16 fireBluePalette = fireBlue_gp;
 const static CRGBPalette16 fireGreenPalette = fireGreen_gp;
@@ -135,11 +149,11 @@ void setVisualizationPalette(VisualizationPalette palette) {
                 case VISUALIZATION_PALETTE_BARS_WARM:
                     currentPalette = warmPalette;
                     break;
-                case VISUALIZATION_PALETTE_BARS_GREEN:
-                    currentPalette = greenPalette;
+                case VISUALIZATION_PALETTE_BARS_OCEAN:
+                    currentPalette = oceanPalette;
                     break;
-                case VISUALIZATION_PALETTE_BARS_BLUE:
-                    currentPalette = bluePalette;
+                case VISUALIZATION_PALETTE_BARS_FUNKY:
+                    currentPalette = funkyPalette;
                     break;
             }
             break;
@@ -151,8 +165,11 @@ void setVisualizationPalette(VisualizationPalette palette) {
                 case VISUALIZATION_PALETTE_SPECTRUM_HEATMAP_BLUE:
                     currentPalette = heatmapBluePalette;
                     break;
-                case VISUALIZATION_PALETTE_SPECTRUM_MAGMA_PINK:
-                    currentPalette = magmaPinkPalette;
+                case VISUALIZATION_PALETTE_SPECTRUM_HEATMAP_RED:
+                    currentPalette = heatmapRedPalette;
+                    break;
+                case VISUALIZATION_PALETTE_SPECTRUM_HEATMAP_PINK:
+                    currentPalette = heatmapPinkPalette;
                     break;
             }
             break;
@@ -264,7 +281,7 @@ static void updateColorBars(float *bands) {
         int toSkip = LED_MATRIX_N_PER_BAND - toLight;
 
         for (int j = 0; j < toLight; j++) {
-            bufferA[i * LED_MATRIX_N_PER_BAND + j] = 128 + j * 3;
+            bufferA[i * LED_MATRIX_N_PER_BAND + j] = 80 + j * 6;
         }
         for (int j = 0; j < toSkip; j++) {
             bufferA[i * LED_MATRIX_N_PER_BAND + j + toLight] = 1;
