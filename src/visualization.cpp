@@ -184,7 +184,7 @@ void teardownVisualization(VisualizationType visualization) {
         bufferB[i] = 0;
         leds[i] = CRGB::Black;
     }
-    for (int i = 0 ; i < LED_MATRIX_N_BANDS; i++) {
+    for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
         bandsBuffer[i] = 0;
     }
 }
