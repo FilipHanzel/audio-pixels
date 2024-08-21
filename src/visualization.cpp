@@ -247,8 +247,14 @@ static void gaussianBlur(int nCols, int nRows, uint8_t *inp, uint8_t *out) {
 }
 
 static void updateColorBars(float *bands) {
+    const float decay = 0.025;
+
     for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
-        bandsBuffer[i] = bands[i] > bandsBuffer[i] ? bands[i] : bandsBuffer[i] * 0.91;
+        if (bands[i] > bandsBuffer[i]) {
+            bandsBuffer[i] = bands[i];
+        } else {
+            bandsBuffer[i] = bandsBuffer[i] < decay ? 0.0 : bandsBuffer[i] - decay;
+        }
     }
 
     for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
