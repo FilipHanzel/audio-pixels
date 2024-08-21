@@ -12,10 +12,12 @@ DEFINE_GRADIENT_PALETTE(blank_gp){
     255, 0, 0, 0
 };
 
-DEFINE_GRADIENT_PALETTE(red_gp){
-      0,   0,   0,   0,
-    128, 255,   0,   0,
-    255, 255, 200, 200
+DEFINE_GRADIENT_PALETTE(warm_gp){
+      0,   0,   0,  0,
+     70, 100,   0,  0,
+    128, 150,   0,  0,
+    140, 150,  40,  0,
+    255, 255, 110, 60
 };
 
 DEFINE_GRADIENT_PALETTE(green_gp){
@@ -92,7 +94,7 @@ DEFINE_GRADIENT_PALETTE(fireGreen_gp){
 // clang-format on
 
 const static CRGBPalette16 blankPalette = blank_gp;
-const static CRGBPalette16 redPalette = red_gp;
+const static CRGBPalette16 warmPalette = warm_gp;
 const static CRGBPalette16 greenPalette = green_gp;
 const static CRGBPalette16 bluePalette = blue_gp;
 const static CRGBPalette16 heatmapGreenPalette = heatmapGreen_gp;
@@ -130,8 +132,8 @@ void setVisualizationPalette(VisualizationPalette palette) {
     switch (currentVisualization) {
         case VISUALIZATION_TYPE_BARS:
             switch (palette) {
-                case VISUALIZATION_PALETTE_BARS_RED:
-                    currentPalette = redPalette;
+                case VISUALIZATION_PALETTE_BARS_WARM:
+                    currentPalette = warmPalette;
                     break;
                 case VISUALIZATION_PALETTE_BARS_GREEN:
                     currentPalette = greenPalette;
