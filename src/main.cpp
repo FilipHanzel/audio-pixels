@@ -190,7 +190,7 @@ void executorTask(void *pvParameters) {
         bandScale = bandScale < 1.0 ? 1.0 : bandScale;
 
         for (int i = 0; i < AUDIO_N_BANDS; i++) {
-            audioBands[i] /= bandScale * 0.8;
+            audioBands[i] /= bandScale * 0.9;
             audioBands[i] = audioBands[i] > 1.0 ? 1.0 : audioBands[i];
 
             audioBands[i] = audioBandsOld[i] * 0.4 + audioBands[i] * 0.6;
