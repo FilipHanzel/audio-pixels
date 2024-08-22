@@ -118,12 +118,15 @@ const static CRGBPalette16 fireRedPalette = fireRed_gp;
 const static CRGBPalette16 fireBluePalette = fireBlue_gp;
 const static CRGBPalette16 fireGreenPalette = fireGreen_gp;
 
-static uint8_t bufferA[LED_MATRIX_N] = {0};
-static uint8_t bufferB[LED_MATRIX_N] = {0};
-static CRGB leds[LED_MATRIX_N] = {CRGB::Black};
-static float bandsBuffer[LED_MATRIX_N_BANDS] = {0};
 static VisualizationType currentVisualization = VISUALIZATION_TYPE_NONE;
 static CRGBPalette16 currentPalette = blankPalette;
+
+// Two buffers, primary (A) and secondary (B), are required to apply effects like blur.
+// If an animation does not require a secondary buffer, it can operate only on the primary buffer.
+static uint8_t bufferA[LED_MATRIX_N] = {0};         // Primary LED color buffer
+static uint8_t bufferB[LED_MATRIX_N] = {0};         // Secondary LED color buffer
+static CRGB leds[LED_MATRIX_N] = {CRGB::Black};     // Array of LED colors used directly by the FastLED library
+static float bandsBuffer[LED_MATRIX_N_BANDS] = {0}; // Internal buffer for bands values that drive the animation
 
 void setupLedStrip() {
     FastLED.addLeds<WS2812B, LED_MATRIX_DATA_PIN, GRB>(leds, LED_MATRIX_N);
@@ -189,7 +192,7 @@ void setVisualizationPalette(VisualizationPalette palette) {
     }
 }
 
-void teardownVisualization(VisualizationType visualization) {
+void teardownVisualization() {
     if (currentVisualization == VISUALIZATION_TYPE_NONE) {
         PRINTF("Visualization is not set up. Halt!\n");
         while (true) continue;
@@ -206,6 +209,9 @@ void teardownVisualization(VisualizationType visualization) {
     }
 }
 
+/**
+ * @brief Transfers the values from the primary buffer (`bufferA`) to the LED array (`leds`).
+ */
 static void pushBuffer() {
     for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
         int offset = i * LED_MATRIX_N_PER_BAND;

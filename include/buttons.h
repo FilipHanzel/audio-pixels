@@ -4,19 +4,23 @@
 #include <Arduino.h>
 
 /**
- * @brief Button state struct used in debouncing routine.
+ * @brief Represents the state of a button for use in a debouncing routine.
  */
 typedef struct {
-    byte stableState = HIGH;
-    byte lastState = HIGH;
-    unsigned long lastDebounceTime = 0;
+    byte stableState = HIGH;            // Last stable state of the button
+    byte lastState = HIGH;              // Last observed state of the button
+    unsigned long lastDebounceTime = 0; // Last time the button state was changed
 } ButtonDebounceState;
 
 /**
- * @brief Button debouncing routine.
+ * @brief Debounces the button press and detects a release event.
  *
- * @param bds Pointer to the `ButtonDebounceState` struct for the button.
- * @param reading Unprocessed reading of the button state.
+ * This function checks the current reading of a button, updates the debouncing
+ * state, and determines whether the button was released. It helps to avoid
+ * false readings due to button bounce.
+ *
+ * @param bds Pointer to the `ButtonDebounceState` struct tracking the button's state.
+ * @param reading Current, unprocessed reading of the button's state.
  *
  * @return `true` if button was released, `false` otherwise.
  */

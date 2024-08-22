@@ -49,7 +49,7 @@ void setup() {
     xTaskCreatePinnedToCore(controlerTask, "controlerTask", 8192, NULL, tskIDLE_PRIORITY, &controlerTaskHandle, 0);
 }
 
-void loop() { vTaskDelete(NULL); } // get rid of the Arduino main loop
+void loop() { vTaskDelete(NULL); } // Get rid of the Arduino main loop
 
 #define AUDIO_SOURCE_BUTTON_PIN          25
 #define VISUALIZATION_TYPE_BUTTON_PIN    26
@@ -129,9 +129,6 @@ void executorTask(void *pvParameters) {
     __attribute__((aligned(16))) float ledBars[LED_MATRIX_N_BANDS] = {0.0};
     setupLedStrip();
     setupVisualization(visualizationType);
-    // TODO: Think if decouping `setupVisualization` and `setVisualizationPalette`
-    //       is necessary. Handling both in one function might simplify things,
-    //       assuming that color palette is the only state required by visualizations.
     setVisualizationPalette(0);
 
     Command command;
@@ -139,7 +136,7 @@ void executorTask(void *pvParameters) {
         while (xQueueReceive(commandQueue, &command, 0) == pdPASS) {
             switch (command.type) {
                 case set_audio_source:
-                    teardownAudioSource(audioSource);
+                    teardownAudioSource();
                     audioSource = command.data.audioSource;
                     setupAudioSource(audioSource);
                     setupAudioTables(audioSource);
@@ -147,7 +144,7 @@ void executorTask(void *pvParameters) {
                     bandScale = DEFAULT_BAND_SCALE;
                     break;
                 case set_visualization_type:
-                    teardownVisualization(visualizationType);
+                    teardownVisualization();
                     visualizationType = command.data.visualizationType;
                     setupVisualization(visualizationType);
                     setVisualizationPalette(0);

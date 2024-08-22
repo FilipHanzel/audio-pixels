@@ -272,18 +272,22 @@ static void teardownLineIn() {
     }
 }
 
-void teardownAudioSource(AudioSource audioSource) {
+void teardownAudioSource() {
     if (currentAudioSource == AUDIO_SOURCE_NONE) {
         PRINTF("Audio source is not set up. Halt!\n");
         while (true) continue;
     }
-    currentAudioSource = AUDIO_SOURCE_NONE;
 
-    if (audioSource == AUDIO_SOURCE_MIC) {
+    if (currentAudioSource == AUDIO_SOURCE_MIC) {
         teardownMic();
-    } else {
+    } else if (currentAudioSource == AUDIO_SOURCE_LINE_IN) {
         teardownLineIn();
+    } else {
+        PRINTF("Unknown audio source. Halt!\n");
+        while (true) continue;
     }
+
+    currentAudioSource = AUDIO_SOURCE_NONE;
 }
 
 void readAudioDataToBuffer() {
@@ -291,6 +295,10 @@ void readAudioDataToBuffer() {
     i2s_read(AUDIO_I2S_PORT, audioBuffer, sizeof(audioBuffer), &bytesRead, portMAX_DELAY);
 
     float avg = 0.0;
+    // The raw audio samples are stored in the most significant bytes, so we need to shift them right
+    // to obtain the actual values. For the INMP441 microphone, each sample is 24 bits, so we shift
+    // by at least 8 bits + some more to reduce noise. For the line-in input, the ESP32's internal ADC
+    // provides 12-bit resolution, stored across two bytes, so we shift by 16 bits.
     uint8_t shift = currentAudioSource == AUDIO_SOURCE_MIC ? 12 : 16;
     for (int i = 0; i < AUDIO_N_SAMPLES; i++) {
         audioBuffer[i] >>= shift;
@@ -340,10 +348,12 @@ void processAudioData(float *bands) {
         while (true) continue;
     }
 
+    // Compute power spectrum
     for (int i = 0; i < AUDIO_N_SAMPLES; i++) {
         fftBuffer[i] = sqrtf(fftBuffer[i * 2 + 0] * fftBuffer[i * 2 + 0] + fftBuffer[i * 2 + 1] * fftBuffer[i * 2 + 1]);
     }
 
+    // Distribute power spectrum values into frequency bands
     memset(bands, 0, sizeof(float) * AUDIO_N_BANDS);
     int bandIdx = 0;
     for (int i = 1; i < AUDIO_N_SAMPLES / 2; i++) {
@@ -359,6 +369,7 @@ void processAudioData(float *bands) {
         bands[bandIdx] += fftBuffer[i];
     }
 
+    // Apply noise reduction and calibration to each frequency band
     for (int i = 0; i < AUDIO_N_BANDS; i++) {
         bands[i] -= currentNoiseTable[i];
         bands[i] *= currentCalibrationTable[i];
