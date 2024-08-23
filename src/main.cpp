@@ -82,6 +82,7 @@ void controlerTask(void *pvParameters) {
         if (debouncedRelease(&visualizationTypeBtnState, digitalRead(VISUALIZATION_TYPE_BUTTON_PIN))) {
             visualizationType++;
             visualizationType %= VISUALIZATION_TYPE_MAX_VALUE + 1;
+            visualizationPalette = 0;
             Command command = {
                 .type = set_visualization_type,
                 .data = {.visualizationType = visualizationType},
