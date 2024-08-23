@@ -118,18 +118,16 @@ void controlerTask(void *pvParameters) {
 }
 
 void executorTask(void *pvParameters) {
-    AudioSource audioSource = DEFAULT_AUDIO_SOURCE;
     __attribute__((aligned(16))) float audioBands[AUDIO_N_BANDS] = {0.0};
     __attribute__((aligned(16))) float audioBandsOld[AUDIO_N_BANDS] = {0.0};
-    setupAudioSource(audioSource);
-    setupAudioTables(audioSource);
+    setupAudioSource(DEFAULT_AUDIO_SOURCE);
+    setupAudioTables(DEFAULT_AUDIO_SOURCE);
     setupAudioProcessing();
     float bandScale = DEFAULT_BAND_SCALE;
 
-    VisualizationType visualizationType = DEFAULT_VISUALIZATION_TYPE;
     __attribute__((aligned(16))) float ledBars[LED_MATRIX_N_BANDS] = {0.0};
     setupLedStrip();
-    setupVisualization(visualizationType);
+    setupVisualization(DEFAULT_VISUALIZATION_TYPE);
     setVisualizationPalette(0);
 
     Command command;
@@ -138,16 +136,13 @@ void executorTask(void *pvParameters) {
             switch (command.type) {
                 case set_audio_source:
                     teardownAudioSource();
-                    audioSource = command.data.audioSource;
-                    setupAudioSource(audioSource);
-                    setupAudioTables(audioSource);
-
+                    setupAudioSource(command.data.audioSource);
+                    setupAudioTables(command.data.audioSource);
                     bandScale = DEFAULT_BAND_SCALE;
                     break;
                 case set_visualization_type:
                     teardownVisualization();
-                    visualizationType = command.data.visualizationType;
-                    setupVisualization(visualizationType);
+                    setupVisualization(command.data.visualizationType);
                     setVisualizationPalette(0);
                     break;
                 case set_visualization_palette:
