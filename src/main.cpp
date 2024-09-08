@@ -51,9 +51,9 @@ void setup() {
 
 void loop() { vTaskDelete(NULL); } // Get rid of the Arduino main loop
 
-#define AUDIO_SOURCE_BUTTON_PIN          25
-#define VISUALIZATION_TYPE_BUTTON_PIN    26
-#define VISUALIZATION_PALETTE_BUTTON_PIN 27
+#define AUDIO_SOURCE_BUTTON_PIN          27
+#define VISUALIZATION_TYPE_BUTTON_PIN    14
+#define VISUALIZATION_PALETTE_BUTTON_PIN 13
 
 void controlerTask(void *pvParameters) {
     ButtonDebounceState audioSourceBtnState;

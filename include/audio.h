@@ -9,11 +9,15 @@
 #define AUDIO_SAMPLING_RATE 44100     //
 #define AUDIO_N_BANDS       16        // Number of frequency bands produced
 
-// Pins for audio inputs
-#define AUDIO_LINE_IN_PIN ADC1_CHANNEL_5 // ADC channel for line-in audio input
-#define AUDIO_MIC_WS_PIN  21             // I2S word select (WS) pin for microphone input
-#define AUDIO_MIC_SD_PIN  18             // I2S serial data (SD) pin for microphone input
-#define AUDIO_MIC_SCK_PIN 19             // I2S serial clock (SCK) pin for microphone input
+// Pins for PCM-1808 (CJMCU-1808)
+#define AUDIO_LINE_IN_MASTER_CLOCK_PIN 0  // Labeled SCK
+#define AUDIO_LINE_IN_LR_SELECT_PIN    17  // Labeled LRC
+#define AUDIO_LINE_IN_BIT_CLOCK_PIN    4 // Labeled BCK
+#define AUDIO_LINE_IN_DATA_PIN         16 // Labeled OUT
+// Pins for INMP441
+#define AUDIO_MIC_LR_SELECT_PIN 18 // Labeled WS
+#define AUDIO_MIC_BIT_CLOCK_PIN 19 // Labeled SCK
+#define AUDIO_MIC_DATA_PIN      5  // Labeled SD
 
 /**
  * @brief Enum-like definition for selecting audio sources.

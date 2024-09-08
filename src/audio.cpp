@@ -127,7 +127,7 @@ static AudioSource currentAudioSource = AUDIO_SOURCE_NONE;
 static float *currentNoiseTable = noiseTableNone;
 static float *currentCalibrationTable = calibrationTableNone;
 
-__attribute__((aligned(16))) static int32_t audioBuffer[AUDIO_N_SAMPLES] = {0};
+__attribute__((aligned(16))) static int32_t audioBuffer[AUDIO_N_SAMPLES * 2] = {0};
 __attribute__((aligned(16))) static float fftBuffer[AUDIO_N_SAMPLES * 2];
 __attribute__((aligned(16))) static float frequencyThresholds[AUDIO_N_BANDS] = {0};
 
@@ -153,7 +153,7 @@ static void setupMic() {
         .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
         .sample_rate = AUDIO_SAMPLING_RATE,
         .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
-        .channel_format = I2S_CHANNEL_FMT_ONLY_RIGHT,
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
         .dma_buf_count = 4,
@@ -166,10 +166,10 @@ static void setupMic() {
     };
 
     const i2s_pin_config_t i2sPinConfig = {
-        .bck_io_num = AUDIO_MIC_SCK_PIN,
-        .ws_io_num = AUDIO_MIC_WS_PIN,
+        .bck_io_num = AUDIO_MIC_BIT_CLOCK_PIN,
+        .ws_io_num = AUDIO_MIC_LR_SELECT_PIN,
         .data_out_num = I2S_PIN_NO_CHANGE,
-        .data_in_num = AUDIO_MIC_SD_PIN,
+        .data_in_num = AUDIO_MIC_DATA_PIN,
     };
 
     esp_err_t err = i2s_driver_install(AUDIO_I2S_PORT, &i2sConfig, 0, NULL);
@@ -187,19 +187,27 @@ static void setupMic() {
 
 static void setupLineIn() {
     const i2s_driver_config_t i2sConfig = {
-        .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN),
+        .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
         .sample_rate = AUDIO_SAMPLING_RATE,
         .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
-        .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
         .dma_buf_count = 4,
         .dma_buf_len = AUDIO_N_SAMPLES,
-        .use_apll = false,
+        .use_apll = true,
         .tx_desc_auto_clear = false,
-        .fixed_mclk = 0,
+        .fixed_mclk = 512 * AUDIO_SAMPLING_RATE,
         .mclk_multiple = I2S_MCLK_MULTIPLE_DEFAULT,
         .bits_per_chan = I2S_BITS_PER_CHAN_DEFAULT,
+    };
+
+    const i2s_pin_config_t i2sPinConfig = {
+        .mck_io_num = AUDIO_LINE_IN_MASTER_CLOCK_PIN,
+        .bck_io_num = AUDIO_LINE_IN_BIT_CLOCK_PIN,
+        .ws_io_num = AUDIO_LINE_IN_LR_SELECT_PIN,
+        .data_out_num = I2S_PIN_NO_CHANGE,
+        .data_in_num = AUDIO_LINE_IN_DATA_PIN,
     };
 
     esp_err_t err = i2s_driver_install(AUDIO_I2S_PORT, &i2sConfig, 0, NULL);
@@ -208,21 +216,9 @@ static void setupLineIn() {
         while (true) continue;
     }
 
-    err = i2s_set_adc_mode(ADC_UNIT_1, AUDIO_LINE_IN_PIN);
+    err = i2s_set_pin(AUDIO_I2S_PORT, &i2sPinConfig);
     if (err != ESP_OK) {
-        PRINTF("Error setting up ADC mode: 0x(%x). Halt!\n", err);
-        while (true) continue;
-    }
-
-    err = adc1_config_channel_atten(AUDIO_LINE_IN_PIN, ADC_ATTEN_DB_12);
-    if (err != ESP_OK) {
-        PRINTF("Error setting up ADC attenuation: 0x(%x). Halt!\n", err);
-        while (true) continue;
-    }
-
-    err = i2s_adc_enable(AUDIO_I2S_PORT);
-    if (err != ESP_OK) {
-        PRINTF("Error enabling ADC: 0x(%x). Halt!\n", err);
+        PRINTF("Error setting I2S pin: 0x(%x). Halt!\n", err);
         while (true) continue;
     }
 }
@@ -241,49 +237,15 @@ void setupAudioSource(AudioSource audioSource) {
     }
 }
 
-static void teardownMic() {
-    esp_err_t err = i2s_driver_uninstall(AUDIO_I2S_PORT);
-    if (err != ESP_OK) {
-        PRINTF("Error uninstalling I2S driver: 0x(%x). Halt!\n", err);
-        while (true) continue;
-    }
-}
-
-static void teardownLineIn() {
-    esp_err_t err = i2s_adc_disable(AUDIO_I2S_PORT);
-    if (err != ESP_OK) {
-        PRINTF("Error disabling ADC: 0x(%x). Halt!\n", err);
-        while (true) continue;
-    }
-
-    err = i2s_driver_uninstall(AUDIO_I2S_PORT);
-    if (err != ESP_OK) {
-        PRINTF("Error uninstalling I2S driver: 0x(%x). Halt!\n", err);
-        while (true) continue;
-    }
-
-    // Without this, switching from line-in to mic won't work.
-    // I found the function when I was looking for something
-    // to reset the ADC and/or I2S module.
-    err = adc_set_i2s_data_source(ADC_I2S_DATA_SRC_IO_SIG);
-    if (err != ESP_OK) {
-        PRINTF("Error uninstalling I2S driver: 0x(%x). Halt!\n", err);
-        while (true) continue;
-    }
-}
-
 void teardownAudioSource() {
     if (currentAudioSource == AUDIO_SOURCE_NONE) {
         PRINTF("Audio source is not set up. Halt!\n");
         while (true) continue;
     }
 
-    if (currentAudioSource == AUDIO_SOURCE_MIC) {
-        teardownMic();
-    } else if (currentAudioSource == AUDIO_SOURCE_LINE_IN) {
-        teardownLineIn();
-    } else {
-        PRINTF("Unknown audio source. Halt!\n");
+    esp_err_t err = i2s_driver_uninstall(AUDIO_I2S_PORT);
+    if (err != ESP_OK) {
+        PRINTF("Error uninstalling I2S driver: 0x(%x). Halt!\n", err);
         while (true) continue;
     }
 
@@ -294,17 +256,22 @@ void readAudioDataToBuffer() {
     size_t bytesRead;
     i2s_read(AUDIO_I2S_PORT, audioBuffer, sizeof(audioBuffer), &bytesRead, portMAX_DELAY);
 
-    float avg = 0.0;
     // The raw audio samples are stored in the most significant bytes, so we need to shift them right
-    // to obtain the actual values. For the INMP441 microphone, each sample is 24 bits, so we shift
-    // by at least 8 bits + some more to reduce noise. For the line-in input, the ESP32's internal ADC
-    // provides 12-bit resolution, stored across two bytes, so we shift by 16 bits.
-    uint8_t shift = currentAudioSource == AUDIO_SOURCE_MIC ? 12 : 16;
+    // to obtain the actual values. For both INMP441 mic and PCM1808 ADC, each sample is 24 bits,
+    // so we shift by at least 8 bits + some more to reduce noise.
+    for (int i = 0; i < AUDIO_N_SAMPLES * 2; i++) {
+        audioBuffer[i] >>= 12;
+    }
+
+    float avg = 0.0;
     for (int i = 0; i < AUDIO_N_SAMPLES; i++) {
-        audioBuffer[i] >>= shift;
+        // Stereo to mono conversion
+        audioBuffer[i] = audioBuffer[i * 2] + audioBuffer[i * 2 + 1];
+
         avg += audioBuffer[i];
     }
     avg /= AUDIO_N_SAMPLES;
+    // Normalization by subtracting average signal
     for (int i = 0; i < AUDIO_N_SAMPLES; i++) {
         audioBuffer[i] -= avg;
     }
