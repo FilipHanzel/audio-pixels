@@ -344,5 +344,8 @@ void updateVisualization(float *bands) {
             break;
     }
     pushBuffer();
+}
+
+void showVisualization() {
     FastLED.show();
 }

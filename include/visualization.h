@@ -2,7 +2,7 @@
 #define VISUALIZATION_H
 
 // LED matrix configuration
-#define LED_MATRIX_DATA_PIN   26  //
+#define LED_MATRIX_DATA_PIN   26 //
 #define LED_MATRIX_N_BANDS    16 // Number of columns or bands
 #define LED_MATRIX_N_PER_BAND 23 // Number of rows or LEDs per band
 #define LED_MATRIX_N          (LED_MATRIX_N_BANDS * LED_MATRIX_N_PER_BAND)
@@ -90,5 +90,10 @@ void teardownVisualization();
  * @note Ensure that a visualization is properly set up before calling this function.
  */
 void updateVisualization(float *bars);
+
+/**
+ * @brief Displays the current LED data on the matrix using FastLED.show().
+ */
+void showVisualization();
 
 #endif

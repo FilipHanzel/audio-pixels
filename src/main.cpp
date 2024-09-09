@@ -191,5 +191,6 @@ void executorTask(void *pvParameters) {
         }
 
         updateVisualization(audioBands);
+        showVisualization();
     }
 }
