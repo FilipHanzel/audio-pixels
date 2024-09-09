@@ -45,10 +45,8 @@
 
 // Input selection
 #define AUDIO_SOURCE AUDIO_SOURCE_MIC
-// #define AUDIO_SOURCE AUDIO_SOURCE_LINE_IN
 
 // Calibration mode
-// #define NOISE_CALIBRATION_MODE
 #define BAND_CALIBRATION_MODE
 
 #define N            512 // Calibration length (number of samples)

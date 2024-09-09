@@ -125,7 +125,6 @@ void executorTask(void *pvParameters) {
     setupAudioProcessing();
     float bandScale = DEFAULT_BAND_SCALE;
 
-    __attribute__((aligned(16))) float ledBars[LED_MATRIX_N_BANDS] = {0.0};
     setupLedStrip();
     setupVisualization(DEFAULT_VISUALIZATION_TYPE);
     setVisualizationPalette(0);
