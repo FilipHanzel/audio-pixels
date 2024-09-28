@@ -129,7 +129,10 @@ static CRGB leds[LED_MATRIX_N] = {CRGB::Black};     // Array of LED colors used 
 static float bandsBuffer[LED_MATRIX_N_BANDS] = {0}; // Internal buffer for bands values that drive the animation
 
 void setupLedStrip() {
-    FastLED.addLeds<WS2812B, LED_MATRIX_DATA_PIN, GRB>(leds, LED_MATRIX_N);
+    FastLED.addLeds<WS2812B, LED_MATRIX_DATA_PIN_A, GRB>(leds, 0 * LED_MATRIX_N_PER_DATA_PIN, LED_MATRIX_N_PER_DATA_PIN);
+    FastLED.addLeds<WS2812B, LED_MATRIX_DATA_PIN_B, GRB>(leds, 1 * LED_MATRIX_N_PER_DATA_PIN, LED_MATRIX_N_PER_DATA_PIN);
+    FastLED.addLeds<WS2812B, LED_MATRIX_DATA_PIN_C, GRB>(leds, 2 * LED_MATRIX_N_PER_DATA_PIN, LED_MATRIX_N_PER_DATA_PIN);
+    FastLED.addLeds<WS2812B, LED_MATRIX_DATA_PIN_D, GRB>(leds, 3 * LED_MATRIX_N_PER_DATA_PIN, LED_MATRIX_N_PER_DATA_PIN);
     FastLED.show();
 }
 
