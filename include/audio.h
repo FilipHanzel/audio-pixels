@@ -11,8 +11,8 @@
 
 // Pins for PCM-1808 (CJMCU-1808)
 #define AUDIO_LINE_IN_MASTER_CLOCK_PIN 0  // Labeled SCK
-#define AUDIO_LINE_IN_LR_SELECT_PIN    17  // Labeled LRC
-#define AUDIO_LINE_IN_BIT_CLOCK_PIN    4 // Labeled BCK
+#define AUDIO_LINE_IN_LR_SELECT_PIN    17 // Labeled LRC
+#define AUDIO_LINE_IN_BIT_CLOCK_PIN    4  // Labeled BCK
 #define AUDIO_LINE_IN_DATA_PIN         16 // Labeled OUT
 // Pins for INMP441
 #define AUDIO_MIC_LR_SELECT_PIN 18 // Labeled WS
