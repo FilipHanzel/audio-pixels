@@ -273,11 +273,15 @@ static void gaussianBlur(int nCols, int nRows, uint8_t *inp, uint8_t *out) {
 }
 
 static void updateColorBars(float *bands) {
-    const float decay = 0.025;
-
+    const float decay = 0.02;
     for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
-        if (bands[i] > bandsBuffer[i]) {
-            bandsBuffer[i] = bands[i];
+        float d = bands[i] - bandsBuffer[i];
+        if (d > 0.6) {
+            bandsBuffer[i] = (bandsBuffer[i] * 1.0 + bands[i]) / 2.0;
+        } else if (d > 0.2) {
+            bandsBuffer[i] = (bandsBuffer[i] * 2.0 + bands[i]) / 3.0;
+        } else if (d > 0.0) {
+            bandsBuffer[i] = (bandsBuffer[i] * 3.0 + bands[i]) / 4.0;
         } else {
             bandsBuffer[i] = bandsBuffer[i] < decay ? 0.0 : bandsBuffer[i] - decay;
         }
@@ -300,7 +304,16 @@ static void updateColorBars(float *bands) {
 
 static void updateSpectrum(float *bands) {
     for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
-        bandsBuffer[i] = bands[i] > bandsBuffer[i] ? bands[i] : bandsBuffer[i] * 0.92;
+        float d = bands[i] - bandsBuffer[i];
+        if (d > 0.6) {
+            bandsBuffer[i] = (bandsBuffer[i] * 1.0 + bands[i]) / 2.0;
+        } else if (d > 0.2) {
+            bandsBuffer[i] = (bandsBuffer[i] * 2.0 + bands[i]) / 3.0;
+        } else if (d > 0.0) {
+            bandsBuffer[i] = (bandsBuffer[i] * 3.0 + bands[i]) / 4.0;
+        } else {
+            bandsBuffer[i] *= 0.92;
+        }
     }
 
     for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
@@ -317,7 +330,12 @@ static void updateSpectrum(float *bands) {
 
 static void updateFire(float *bands) {
     for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
-        bandsBuffer[i] = bands[i] > bandsBuffer[i] ? bands[i] : bandsBuffer[i] * 0.93;
+        float d = bands[i] - bandsBuffer[i];
+        if (d > 0.0) {
+            bandsBuffer[i] = bands[i];
+        } else {
+            bandsBuffer[i] *= 0.8;
+        }
     }
 
     for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {

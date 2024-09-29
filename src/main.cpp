@@ -118,7 +118,6 @@ void controlerTask(void *pvParameters) {
 
 void executorTask(void *pvParameters) {
     __attribute__((aligned(16))) float audioBands[AUDIO_N_BANDS] = {0.0};
-    __attribute__((aligned(16))) float audioBandsOld[AUDIO_N_BANDS] = {0.0};
     setupAudioSource(DEFAULT_AUDIO_SOURCE);
     setupAudioTables(DEFAULT_AUDIO_SOURCE);
     resetAudioBandScale(DEFAULT_AUDIO_SOURCE);
@@ -173,12 +172,8 @@ void executorTask(void *pvParameters) {
 
         processAudioData(audioBands);
 
-        for (int i = 0; i < AUDIO_N_BANDS; i++) {
-            audioBands[i] = audioBandsOld[i] * 0.4 + audioBands[i] * 0.6;
-            audioBandsOld[i] = audioBands[i];
-        }
-
         updateVisualization(audioBands);
+
         showVisualization();
     }
 }
