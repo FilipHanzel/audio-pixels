@@ -138,6 +138,8 @@ __attribute__((aligned(16))) static float window[AUDIO_N_SAMPLES];
 __attribute__((aligned(16))) static float fftBuffer[AUDIO_N_SAMPLES * 2];
 __attribute__((aligned(16))) static float frequencyThresholds[AUDIO_N_BANDS] = {0};
 
+static float bandScale = 0.0;
+
 void setupAudioProcessing() {
     // Frequency thresholds are based on a modified Bark scale.
     // To better suit audio visualization needs, higher frequencies
@@ -307,6 +309,14 @@ void setupAudioTables(AudioSource audioSource) {
     setupAudioCalibrationTable(audioSource);
 }
 
+void resetAudioBandScale(AudioSource audioSource) {
+    if (audioSource == AUDIO_SOURCE_MIC) {
+        bandScale = AUDIO_DEFAULT_BAND_SCALE_MIC;
+    } else {
+        bandScale = AUDIO_DEFAULT_BAND_SCALE_LINE_IN;
+    }
+}
+
 void processAudioData(float *bands) {
     for (int i = 0; i < AUDIO_N_SAMPLES; i++) {
         fftBuffer[i * 2 + 0] = audioBuffer[i] * window[i];
@@ -351,6 +361,18 @@ void processAudioData(float *bands) {
         bands[i] *= currentCalibrationTable[i];
 
         bands[i] = bands[i] < 0.0 ? 0.0 : bands[i];
+    }
+
+    // Scale bands to range from 0.0 to 1.0 after updating the scale itself
+    float max = 0.0;
+    for (int i = 0; i < AUDIO_N_BANDS; i++) {
+        max = max < bands[i] ? bands[i] : max;
+    }
+    bandScale = (max + bandScale * (AUDIO_BAND_SCALE_FACTOR - 1)) / AUDIO_BAND_SCALE_FACTOR;
+    bandScale = bandScale < 1.0 ? 1.0 : bandScale;
+    for (int i = 0; i < AUDIO_N_BANDS; i++) {
+        bands[i] /= bandScale * 0.95;
+        bands[i] = bands[i] > 1.0 ? 1.0 : bands[i];
     }
 }
 

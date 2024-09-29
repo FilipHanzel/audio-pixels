@@ -19,6 +19,12 @@
 #define AUDIO_MIC_BIT_CLOCK_PIN 19 // Labeled SCK
 #define AUDIO_MIC_DATA_PIN      5  // Labeled SD
 
+// Default values for band scales
+#define AUDIO_DEFAULT_BAND_SCALE_LINE_IN 300000000.0
+#define AUDIO_DEFAULT_BAND_SCALE_MIC     4000000.0
+// Higher factor means that scale is less responsive
+#define AUDIO_BAND_SCALE_FACTOR 200
+
 /**
  * @brief Enum-like definition for selecting audio sources.
  */
@@ -85,6 +91,13 @@ void setupAudioCalibrationTable(AudioSource audioSource);
  * @param audioSource The audio source for which to configure the tables.
  */
 void setupAudioTables(AudioSource audioSource);
+
+/**
+ * @brief Resets band scale for the specified audio source.
+ *
+ * @param audioSource The audio source for which to reset the band scale.
+ */
+void resetAudioBandScale(AudioSource audioSource);
 
 /**
  * @brief Processes the audio data to produce calibrated frequency band power levels.

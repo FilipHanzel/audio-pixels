@@ -10,7 +10,6 @@
 
 #define DEFAULT_AUDIO_SOURCE       AUDIO_SOURCE_LINE_IN
 #define DEFAULT_VISUALIZATION_TYPE VISUALIZATION_TYPE_BARS
-#define DEFAULT_BAND_SCALE         100000
 
 TaskHandle_t controlerTaskHandle;
 TaskHandle_t executorTaskHandle;
@@ -122,8 +121,8 @@ void executorTask(void *pvParameters) {
     __attribute__((aligned(16))) float audioBandsOld[AUDIO_N_BANDS] = {0.0};
     setupAudioSource(DEFAULT_AUDIO_SOURCE);
     setupAudioTables(DEFAULT_AUDIO_SOURCE);
+    resetAudioBandScale(DEFAULT_AUDIO_SOURCE);
     setupAudioProcessing();
-    float bandScale = DEFAULT_BAND_SCALE;
 
     setupLedStrip();
     setupVisualization(DEFAULT_VISUALIZATION_TYPE);
@@ -137,7 +136,7 @@ void executorTask(void *pvParameters) {
                     teardownAudioSource();
                     setupAudioSource(command.data.audioSource);
                     setupAudioTables(command.data.audioSource);
-                    bandScale = DEFAULT_BAND_SCALE;
+                    resetAudioBandScale(command.data.audioSource);
                     break;
                 case set_visualization_type:
                     teardownVisualization();
@@ -174,17 +173,7 @@ void executorTask(void *pvParameters) {
 
         processAudioData(audioBands);
 
-        float max = 0.0;
         for (int i = 0; i < AUDIO_N_BANDS; i++) {
-            max = max < audioBands[i] ? audioBands[i] : max;
-        }
-        bandScale = (max + bandScale * 199.0) / 200.0;
-        bandScale = bandScale < 1.0 ? 1.0 : bandScale;
-
-        for (int i = 0; i < AUDIO_N_BANDS; i++) {
-            audioBands[i] /= bandScale * 0.9;
-            audioBands[i] = audioBands[i] > 1.0 ? 1.0 : audioBands[i];
-
             audioBands[i] = audioBandsOld[i] * 0.4 + audioBands[i] * 0.6;
             audioBandsOld[i] = audioBands[i];
         }
