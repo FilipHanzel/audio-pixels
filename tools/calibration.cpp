@@ -77,7 +77,10 @@ void setup() {
     setupAudioNoiseTable(AUDIO_SOURCE);
 #endif
 
-    FastLED.addLeds<WS2812B, LED_MATRIX_DATA_PIN, GRB>(leds, LED_MATRIX_N);
+    FastLED.addLeds<WS2812B, LED_MATRIX_DATA_PIN_A, GRB>(leds, 0 * LED_MATRIX_N_PER_DATA_PIN, LED_MATRIX_N_PER_DATA_PIN);
+    FastLED.addLeds<WS2812B, LED_MATRIX_DATA_PIN_B, GRB>(leds, 1 * LED_MATRIX_N_PER_DATA_PIN, LED_MATRIX_N_PER_DATA_PIN);
+    FastLED.addLeds<WS2812B, LED_MATRIX_DATA_PIN_C, GRB>(leds, 2 * LED_MATRIX_N_PER_DATA_PIN, LED_MATRIX_N_PER_DATA_PIN);
+    FastLED.addLeds<WS2812B, LED_MATRIX_DATA_PIN_D, GRB>(leds, 3 * LED_MATRIX_N_PER_DATA_PIN, LED_MATRIX_N_PER_DATA_PIN);
     FastLED.show();
 }
 
@@ -121,17 +124,17 @@ void loop() {
 
         float max = 0.0;
         for (int i = 0; i < AUDIO_N_BANDS; i++) {
-            if (table[i] == 0.0) {
-                table[i] = 0.00001;
-            }
-
             if (max < table[i]) {
                 max = table[i];
             }
         }
 
         for (int i = 0; i < AUDIO_N_BANDS; i++) {
-            table[i] = max / table[i];
+            if (table[i] == 0.0) {
+                table[i] = -1.0;
+            } else {
+                table[i] = max / table[i];
+            }
         }
 
         Serial.printf("Calibration table: {");
@@ -145,12 +148,9 @@ void loop() {
 
 #endif
 
-    // I found that wiith my current setup, driving the LEDs
-    // causes noise that is picked up by the ADC.
-    // I hope to get rid of that noise with RS485 transmission
-    // and if that doesn't work, then external ADC.
-    // In the meantime I added animation to the calibration
-    // process, too make sure the noise is included.
+    // I found that with built-in ADC on ESP32 board, driving the LEDs
+    // causes noise that is picked up by the ADC. I added animation
+    // to the calibration process, to make sure the noise is included.
 
     for (int i = 0; i < LED_MATRIX_N; i++) {
         leds[i] = CRGB::Black;
