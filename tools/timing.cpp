@@ -19,7 +19,7 @@ uint loops = 0;
 
 float dt_readAudioDataToBuffer = 0.0;
 float dt_processAudioData = 0.0;
-float dt_postProcess = 0.0;
+float dt_scaleAudioData = 0.0;
 float dt_updateVisualization = 0.0;
 float dt_showVisualization = 0.0;
 
@@ -30,21 +30,21 @@ void checkTimings() {
         Serial.printf("Timings:\n");
         Serial.printf("  dt_readAudioDataToBuffer: %.2fus per iteration\n", dt_readAudioDataToBuffer / N_LOOPS);
         Serial.printf("  dt_processAudioData:      %.2fus per iteration\n", dt_processAudioData / N_LOOPS);
-        Serial.printf("  dt_postProcess:           %.2fus per iteration\n", dt_postProcess / N_LOOPS);
+        Serial.printf("  dt_scaleAudioData:        %.2fus per iteration\n", dt_scaleAudioData / N_LOOPS);
         Serial.printf("  dt_updateVisualization:   %.2fus per iteration\n", dt_updateVisualization / N_LOOPS);
         Serial.printf("  dt_showVisualization:     %.2fus per iteration\n", dt_showVisualization / N_LOOPS);
 
         float dt_totalAverage = 0.0;
         dt_totalAverage += dt_readAudioDataToBuffer;
         dt_totalAverage += dt_processAudioData;
-        dt_totalAverage += dt_postProcess;
+        dt_totalAverage += dt_scaleAudioData;
         dt_totalAverage += dt_updateVisualization;
         dt_totalAverage += dt_showVisualization;
         Serial.printf("  dt_totalAverage:          %.2fus per iteration\n", dt_totalAverage / N_LOOPS);
 
         dt_readAudioDataToBuffer = 0.0;
         dt_processAudioData = 0.0;
-        dt_postProcess = 0.0;
+        dt_scaleAudioData = 0.0;
         dt_updateVisualization = 0.0;
         dt_showVisualization = 0.0;
     }
@@ -77,21 +77,8 @@ void loop() {
     TIME_MEASURE_END(dt_processAudioData);
 
     TIME_MEASURE_START;
-    float max = 0.0;
-    for (int i = 0; i < AUDIO_N_BANDS; i++) {
-        max = max < audioBands[i] ? audioBands[i] : max;
-    }
-    bandScale = (max + bandScale * 199.0) / 200.0;
-    bandScale = bandScale < 1.0 ? 1.0 : bandScale;
-
-    for (int i = 0; i < AUDIO_N_BANDS; i++) {
-        audioBands[i] /= bandScale * 0.9;
-        audioBands[i] = audioBands[i] > 1.0 ? 1.0 : audioBands[i];
-
-        audioBands[i] = audioBandsOld[i] * 0.4 + audioBands[i] * 0.6;
-        audioBandsOld[i] = audioBands[i];
-    }
-    TIME_MEASURE_END(dt_postProcess);
+    scaleAudioData(audioBands);
+    TIME_MEASURE_END(dt_scaleAudioData);
 
     TIME_MEASURE_START;
     updateVisualization(audioBands);
