@@ -111,6 +111,13 @@ void resetAudioBandScale(AudioSource audioSource);
 void processAudioData(float *bands);
 
 /**
+ * @brief Scale bands to range from 0.0 to 1.0 after updating the internal scale.
+ *
+ * @param bands Pointer to an array that will be scaled.
+ */
+void scaleAudioData(float *bands);
+
+/**
  * @brief Provides access to the internal audio buffer for debugging purposes.
  *
  * @param buffer A pointer to a pointer that will be set to the address of the internal `audioBuffer`.

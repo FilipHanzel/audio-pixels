@@ -171,9 +171,9 @@ void executorTask(void *pvParameters) {
         // //
 
         processAudioData(audioBands);
+        scaleAudioData(audioBands);
 
         updateVisualization(audioBands);
-
         showVisualization();
     }
 }

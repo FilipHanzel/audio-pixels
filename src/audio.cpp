@@ -362,8 +362,9 @@ void processAudioData(float *bands) {
 
         bands[i] = bands[i] < 0.0 ? 0.0 : bands[i];
     }
+}
 
-    // Scale bands to range from 0.0 to 1.0 after updating the scale itself
+void scaleAudioData(float *bands) {
     float max = 0.0;
     for (int i = 0; i < AUDIO_N_BANDS; i++) {
         max = max < bands[i] ? bands[i] : max;
