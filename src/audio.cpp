@@ -128,6 +128,7 @@ static float *currentNoiseTable = noiseTableNone;
 static float *currentCalibrationTable = calibrationTableNone;
 
 __attribute__((aligned(16))) static int32_t audioBuffer[AUDIO_N_SAMPLES * 2] = {0};
+__attribute__((aligned(16))) static float window[AUDIO_N_SAMPLES];
 __attribute__((aligned(16))) static float fftBuffer[AUDIO_N_SAMPLES * 2];
 __attribute__((aligned(16))) static float frequencyThresholds[AUDIO_N_BANDS] = {0};
 
@@ -146,6 +147,8 @@ void setupAudioProcessing() {
         PRINTF("Not possible to initialize FFT2R. Error: 0x(%x). Halt!\n", err);
         while (true) continue;
     }
+
+    dsps_wind_hann_f32(window, AUDIO_N_SAMPLES);
 }
 
 static void setupMic() {
@@ -300,7 +303,7 @@ void setupAudioTables(AudioSource audioSource) {
 
 void processAudioData(float *bands) {
     for (int i = 0; i < AUDIO_N_SAMPLES; i++) {
-        fftBuffer[i * 2 + 0] = audioBuffer[i];
+        fftBuffer[i * 2 + 0] = audioBuffer[i] * window[i];
         fftBuffer[i * 2 + 1] = 0;
     }
 
