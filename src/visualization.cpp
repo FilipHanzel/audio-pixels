@@ -123,10 +123,11 @@ static CRGBPalette16 currentPalette = blankPalette;
 
 // Two buffers, primary (A) and secondary (B), are required to apply effects like blur.
 // If an animation does not require a secondary buffer, it can operate only on the primary buffer.
-static uint8_t bufferA[LED_MATRIX_N] = {0};         // Primary LED color buffer
-static uint8_t bufferB[LED_MATRIX_N] = {0};         // Secondary LED color buffer
-static CRGB leds[LED_MATRIX_N] = {CRGB::Black};     // Array of LED colors used directly by the FastLED library
-static float bandsBuffer[LED_MATRIX_N_BANDS] = {0}; // Internal buffer for bands values that drive the animation
+static uint8_t colorBufferA[LED_MATRIX_N] = {0};     // Primary LED color buffer
+static uint8_t colorBufferB[LED_MATRIX_N] = {0};     // Secondary LED color buffer
+static uint8_t brightnessBuffer[LED_MATRIX_N] = {0}; //
+static CRGB leds[LED_MATRIX_N] = {CRGB::Black};      // Array of LED colors used directly by the FastLED library
+static float bandsBuffer[LED_MATRIX_N_BANDS] = {0};  // Internal buffer for bands values that drive the animation
 
 void setupLedStrip() {
     FastLED.addLeds<WS2812B, LED_MATRIX_DATA_PIN_A, GRB>(leds, 0 * LED_MATRIX_N_PER_DATA_PIN, LED_MATRIX_N_PER_DATA_PIN);
@@ -142,6 +143,10 @@ void setupVisualization(VisualizationType visualization) {
         while (true) continue;
     }
     currentVisualization = visualization;
+
+    for (int i = 0; i < LED_MATRIX_N; i++) {
+        brightnessBuffer[i] = 255;
+    }
 }
 
 void setVisualizationPalette(VisualizationPalette palette) {
@@ -203,8 +208,9 @@ void teardownVisualization() {
     currentVisualization = VISUALIZATION_TYPE_NONE;
     currentPalette = blankPalette;
     for (int i = 0; i < LED_MATRIX_N; i++) {
-        bufferA[i] = 0;
-        bufferB[i] = 0;
+        colorBufferA[i] = 0;
+        colorBufferB[i] = 0;
+        brightnessBuffer[i] = 0;
         leds[i] = CRGB::Black;
     }
     for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
@@ -213,7 +219,7 @@ void teardownVisualization() {
 }
 
 /**
- * @brief Transfers the values from the primary buffer (`bufferA`) to the LED array (`leds`).
+ * @brief Transfers the values from the primary buffer (`colorBufferA`) to the LED array (`leds`).
  */
 static void pushBuffer() {
     for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
@@ -221,11 +227,11 @@ static void pushBuffer() {
 
         if (i % 2 == 0) {
             for (int j = 0; j < LED_MATRIX_N_PER_BAND; j++) {
-                leds[offset + j] = ColorFromPalette(currentPalette, bufferA[offset + j]);
+                leds[offset + j] = ColorFromPalette(currentPalette, colorBufferA[offset + j], brightnessBuffer[offset + j]);
             }
         } else {
             for (int j = 0, k = LED_MATRIX_N_PER_BAND - 1; j < LED_MATRIX_N_PER_BAND; j++, k--) {
-                leds[offset + k] = ColorFromPalette(currentPalette, bufferA[offset + j]);
+                leds[offset + k] = ColorFromPalette(currentPalette, colorBufferA[offset + j], brightnessBuffer[offset + j]);
             }
         }
     }
@@ -287,17 +293,23 @@ static void updateColorBars(float *bands) {
         }
     }
 
+    for (int j = 0; j < LED_MATRIX_N; j++) {
+        colorBufferA[j] = 1;
+        brightnessBuffer[j] = 255;
+    }
+
     for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
         float band = bandsBuffer[i];
         if (band > 1.0) band = 1.0;
-        int toLight = int(band * LED_MATRIX_N_PER_BAND);
-        int toSkip = LED_MATRIX_N_PER_BAND - toLight;
 
-        for (int j = 0; j < toLight; j++) {
-            bufferA[i * LED_MATRIX_N_PER_BAND + j] = 80 + j * 6;
-        }
-        for (int j = 0; j < toSkip; j++) {
-            bufferA[i * LED_MATRIX_N_PER_BAND + j + toLight] = 1;
+        int left = int(band * LED_MATRIX_N_PER_BAND * 255);
+        for (int j = 0; i < LED_MATRIX_N_PER_BAND; j++) {
+
+            colorBufferA[i * LED_MATRIX_N_PER_BAND + j] = 80 + j * 6;
+            brightnessBuffer[i * LED_MATRIX_N_PER_BAND + j] = left > 255 ? 255 : left;
+
+            left -= 255;
+            if (left < 0) break;
         }
     }
 }
@@ -322,9 +334,9 @@ static void updateSpectrum(float *bands) {
         uint8_t colorIndex = int(band * 255.0);
 
         for (int j = LED_MATRIX_N_PER_BAND - 1; j > 0; j--) {
-            bufferA[i * LED_MATRIX_N_PER_BAND + j] = bufferA[i * LED_MATRIX_N_PER_BAND + j - 1];
+            colorBufferA[i * LED_MATRIX_N_PER_BAND + j] = colorBufferA[i * LED_MATRIX_N_PER_BAND + j - 1];
         }
-        bufferA[i * LED_MATRIX_N_PER_BAND] = colorIndex;
+        colorBufferA[i * LED_MATRIX_N_PER_BAND] = colorIndex;
     }
 }
 
@@ -343,13 +355,13 @@ static void updateFire(float *bands) {
         if (band > 1.0) band = 1.0;
 
         for (int j = LED_MATRIX_N_PER_BAND - 1; j > 0; j--) {
-            bufferB[i * LED_MATRIX_N_PER_BAND + j] = bufferB[i * LED_MATRIX_N_PER_BAND + j - 1] * 0.975;
+            colorBufferB[i * LED_MATRIX_N_PER_BAND + j] = colorBufferB[i * LED_MATRIX_N_PER_BAND + j - 1] * 0.975;
         }
-        bufferB[i * LED_MATRIX_N_PER_BAND] += int(band * 255.0);
-        bufferB[i * LED_MATRIX_N_PER_BAND] /= 2.0;
+        colorBufferB[i * LED_MATRIX_N_PER_BAND] += int(band * 255.0);
+        colorBufferB[i * LED_MATRIX_N_PER_BAND] /= 2.0;
     }
 
-    gaussianBlur(LED_MATRIX_N_BANDS, LED_MATRIX_N_PER_BAND, bufferB, bufferA);
+    gaussianBlur(LED_MATRIX_N_BANDS, LED_MATRIX_N_PER_BAND, colorBufferB, colorBufferA);
 }
 
 void updateVisualization(float *bands) {
