@@ -6,8 +6,8 @@
 #define LED_MATRIX_DATA_PIN_B     25 // 2nd 8 columns
 #define LED_MATRIX_DATA_PIN_C     33 // 3rd 8 columns
 #define LED_MATRIX_DATA_PIN_D     32 // 4th 8 columns
-#define LED_MATRIX_N_BANDS        16 // Number of columns or bands
-#define LED_MATRIX_N_PER_BAND     23 // Number of rows or LEDs per band
+#define LED_MATRIX_N_BANDS        32 // Number of columns or bands
+#define LED_MATRIX_N_PER_BAND     32 // Number of rows or LEDs per band
 #define LED_MATRIX_N              (LED_MATRIX_N_BANDS * LED_MATRIX_N_PER_BAND)
 #define LED_MATRIX_N_PER_DATA_PIN (LED_MATRIX_N / 4)
 

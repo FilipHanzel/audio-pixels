@@ -364,16 +364,24 @@ static void updateFire(float *bands) {
     gaussianBlur(LED_MATRIX_N_BANDS, LED_MATRIX_N_PER_BAND, colorBufferB, colorBufferA);
 }
 
+// Temporary buffer to duplicate audio bands for 32 strip matrix
+static float dupBuffer[LED_MATRIX_N_BANDS] = {0};
+
 void updateVisualization(float *bands) {
+    for (int i = 0; i < 16; i++) {
+        dupBuffer[i * 2 + 0] = bands[i];
+        dupBuffer[i * 2 + 1] = bands[i];
+    }
+
     switch (currentVisualization) {
         case VISUALIZATION_TYPE_BARS:
-            updateColorBars(bands);
+            updateColorBars(dupBuffer);
             break;
         case VISUALIZATION_TYPE_SPECTRUM:
-            updateSpectrum(bands);
+            updateSpectrum(dupBuffer);
             break;
         case VISUALIZATION_TYPE_FIRE:
-            updateFire(bands);
+            updateFire(dupBuffer);
             break;
     }
     pushBuffer();
