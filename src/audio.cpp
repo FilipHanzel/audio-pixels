@@ -158,7 +158,17 @@ void setupAudioProcessing() {
         while (true) continue;
     }
 
-    dsps_wind_hann_f32(window, AUDIO_N_SAMPLES);
+    // Windowing helps reduce frequency leakage between bands but can cause some parts of
+    // short signals to be lost, especially if they start near the edge of the audio sample.
+    // This means the same short signal might result in different responses. To reduce this problem,
+    // the shape of the window is made closer to a 'square' by taking the square root of the values
+    // several times. This keeps more of the signal intact while still reducing leakage.
+    dsps_wind_blackman_harris_f32(window, AUDIO_N_SAMPLES);
+    for (int i = 0; i < AUDIO_N_SAMPLES; i++) {
+        window[i] = sqrtf(window[i]);
+        window[i] = sqrtf(window[i]);
+        window[i] = sqrtf(window[i]);
+    }
 }
 
 static void setupMic() {
