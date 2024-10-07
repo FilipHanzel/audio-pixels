@@ -344,7 +344,7 @@ static void updateFire(float *bands) {
         if (d > 0.0) {
             bandsBuffer[i] = bands[i];
         } else {
-            bandsBuffer[i] *= 0.8;
+            bandsBuffer[i] *= 0.95;
         }
     }
 
