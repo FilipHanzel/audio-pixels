@@ -282,12 +282,10 @@ static void updateColorBars(float *bands) {
     const float decay = 0.02;
     for (int i = 0; i < LED_MATRIX_N_BANDS; i++) {
         float d = bands[i] - bandsBuffer[i];
-        if (d > 0.6) {
-            bandsBuffer[i] = (bandsBuffer[i] * 1.0 + bands[i]) / 2.0;
-        } else if (d > 0.2) {
+        if (d > 0.2) {
             bandsBuffer[i] = (bandsBuffer[i] * 2.0 + bands[i]) / 3.0;
         } else if (d > 0.0) {
-            bandsBuffer[i] = (bandsBuffer[i] * 3.0 + bands[i]) / 4.0;
+            bandsBuffer[i] = (bandsBuffer[i] * 6.0 + bands[i]) / 7.0;
         } else {
             bandsBuffer[i] = bandsBuffer[i] < decay ? 0.0 : bandsBuffer[i] - decay;
         }
