@@ -23,7 +23,8 @@
 #define AUDIO_DEFAULT_BAND_SCALE_LINE_IN 300000000.0
 #define AUDIO_DEFAULT_BAND_SCALE_MIC     4000000.0
 // Higher factor means that scale is less responsive
-#define AUDIO_BAND_SCALE_FACTOR 200
+#define AUDIO_BAND_SCALE_UP_FACTOR   5
+#define AUDIO_BAND_SCALE_DOWN_FACTOR 300
 
 /**
  * @brief Enum-like definition for selecting audio sources.

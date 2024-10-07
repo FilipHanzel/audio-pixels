@@ -369,7 +369,11 @@ void scaleAudioData(float *bands) {
     for (int i = 0; i < AUDIO_N_BANDS; i++) {
         max = max < bands[i] ? bands[i] : max;
     }
-    bandScale = (max + bandScale * (AUDIO_BAND_SCALE_FACTOR - 1)) / AUDIO_BAND_SCALE_FACTOR;
+    if (max > bandScale) {
+        bandScale = (max + bandScale * (AUDIO_BAND_SCALE_UP_FACTOR - 1)) / AUDIO_BAND_SCALE_UP_FACTOR;
+    } else {
+        bandScale = (max + bandScale * (AUDIO_BAND_SCALE_DOWN_FACTOR - 1)) / AUDIO_BAND_SCALE_DOWN_FACTOR;
+    }
     bandScale = bandScale < 1.0 ? 1.0 : bandScale;
     for (int i = 0; i < AUDIO_N_BANDS; i++) {
         bands[i] /= bandScale * 0.95;
