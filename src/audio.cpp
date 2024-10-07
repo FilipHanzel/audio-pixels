@@ -1,11 +1,13 @@
 #include "audio.h"
 
+#include <Arduino.h>
+#include <cstddef>
 #include <driver/i2s.h>
 #include <esp_dsp.h>
 #include <math.h>
 #include <string.h>
 
-#include <cstddef>
+#define DEBUG
 
 #include "macros.h"
 
