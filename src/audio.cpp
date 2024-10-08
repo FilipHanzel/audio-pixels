@@ -310,8 +310,10 @@ void scaleAudioData(float *bands) {
     for (int i = 0; i < AUDIO_N_BANDS; i++) {
         max = max < bands[i] ? bands[i] : max;
     }
+    // caling up should be quicker than scaling down (AUDIO_BAND_SCALE_UP_FACTOR < AUDIO_BAND_SCALE_DOWN_FACTOR),
+    // but it shouldn't scale all the way up to the maximum value, allowing the bands to remain high for a while.
     if (max > bandScale) {
-        bandScale = (max + bandScale * (AUDIO_BAND_SCALE_UP_FACTOR - 1)) / AUDIO_BAND_SCALE_UP_FACTOR;
+        bandScale = (max * 0.85 + bandScale * (AUDIO_BAND_SCALE_UP_FACTOR - 1)) / AUDIO_BAND_SCALE_UP_FACTOR;
     } else {
         bandScale = (max + bandScale * (AUDIO_BAND_SCALE_DOWN_FACTOR - 1)) / AUDIO_BAND_SCALE_DOWN_FACTOR;
     }
