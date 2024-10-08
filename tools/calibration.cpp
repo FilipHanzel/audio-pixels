@@ -44,13 +44,15 @@
 #include "visualization.h"
 
 // Input selection
-#define AUDIO_SOURCE AUDIO_SOURCE_MIC
+// #define AUDIO_SOURCE AUDIO_SOURCE_MIC
+#define AUDIO_SOURCE AUDIO_SOURCE_LINE_IN
 
 // Calibration mode
+// #define NOISE_CALIBRATION_MODE
 #define BAND_CALIBRATION_MODE
 
-#define N            512 // Calibration length (number of samples)
-#define NOISE_MARGIN 0.5 //
+#define N            1024 // Calibration length (number of samples)
+#define NOISE_MARGIN 0.5  //
 
 #if defined BAND_CALIBRATION_MODE && defined NOISE_CALIBRATION_MODE
 #error "One mode at a time!"
