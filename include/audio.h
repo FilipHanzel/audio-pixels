@@ -7,7 +7,7 @@
 #define AUDIO_I2S_PORT      I2S_NUM_0 // I2S port for audio input
 #define AUDIO_N_SAMPLES     1024      //
 #define AUDIO_SAMPLING_RATE 44100     //
-#define AUDIO_N_BANDS       16        // Number of frequency bands produced
+#define AUDIO_N_BANDS       32        // Number of frequency bands produced
 
 // Pins for PCM-1808 (CJMCU-1808)
 #define AUDIO_LINE_IN_MASTER_CLOCK_PIN 0  // Labeled SCK
