@@ -355,6 +355,8 @@ void processAudioData(float *bands) {
     memset(bands, 0, sizeof(float) * AUDIO_N_BANDS);
     int bandIdx = 0;
     for (int i = 1; i < AUDIO_N_SAMPLES / 2; i++) {
+        bands[bandIdx] += fftBuffer[i];
+
         float frequency = i * AUDIO_SAMPLING_RATE / AUDIO_N_SAMPLES;
         if (frequencyThresholds[bandIdx] < frequency) {
             bandIdx++;
@@ -364,7 +366,6 @@ void processAudioData(float *bands) {
                 while (true) continue;
             }
         }
-        bands[bandIdx] += fftBuffer[i];
     }
 
     // Apply noise reduction and calibration to each frequency band
